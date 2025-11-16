@@ -469,21 +469,6 @@ items_b = db.relationship('ModelB', back_populates='model_a')
 model_a = db.relationship('ModelA', back_populates='items_b')
 ```
 
-## 🐛 Solución de Problemas
-
-### La imagen no se sube
-- Verifica que la carpeta `static/uploads/products/` existe
-- Verifica permisos de escritura
-- Revisa el tamaño máximo en `config.py`
-
-### Error al crear órdenes
-- Verifica que el producto tenga stock
-- Asegúrate de que el carrito no esté vacío
-
-### Imports circulares
-- Usa `extensions.py` para extensiones compartidas
-- Importa modelos dentro de funciones si es necesario
-
 ## 🔒 Seguridad
 
 - ✅ Contraseñas hasheadas con Werkzeug
