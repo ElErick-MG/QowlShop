@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - QowlShop{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <h2 class="mb-4">
+                <i class="bi bi-speedometer2"></i> Dashboard
+            </h2>
+            
+            <!-- Tarjeta de información del usuario -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-person-circle"></i> Información de Usuario
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Nombre de Usuario:</strong></p>
+                            <p class="text-muted">{{ current_user.username }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Email:</strong></p>
+                            <p class="text-muted">{{ current_user.email }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Rol:</strong></p>
+                            {% if current_user.is_admin() %}
+                                <span class="badge bg-danger">Administrador</span>
+                            {% else %}
+                                <span class="badge bg-primary">Usuario</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Miembro desde:</strong></p>
+                            <p class="text-muted">{{ current_user.created_at.strftime('%d/%m/%Y') }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Accesos rápidos -->
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body text-center">
+                            <i class="bi bi-person-gear fs-1 text-primary"></i>
+                            <h5 class="mt-3">Perfil</h5>
+                            <p class="text-muted">Gestiona tu información personal</p>
+                            <button class="btn btn-outline-primary" disabled>
+                                Próximamente
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body text-center">
+                            <i class="bi bi-shield-lock fs-1 text-success"></i>
+                            <h5 class="mt-3">Seguridad</h5>
+                            <p class="text-muted">Cambia tu contraseña</p>
+                            <button class="btn btn-outline-success" disabled>
+                                Próximamente
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            {% if current_user.is_admin() %}
+            <div class="alert alert-info mt-4">
+                <h5 class="alert-heading">
+                    <i class="bi bi-gear"></i> Panel de Administrador
+                </h5>
+                <p>Como administrador, tienes acceso a funciones adicionales.</p>
+                <hr>
+                <a href="{{ url_for('main.admin_panel') }}" class="btn btn-info">
+                    Ir al Panel de Admin
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
