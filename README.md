@@ -134,8 +134,8 @@ User (1) --- (1) Cart (1) ----< (N) CartItem >---- (N) Product
 ### 1. Clonar/Crear el proyecto
 
 ```bash
-mkdir ecommerce_app
-cd ecommerce_app
+mkdir qowlshop_app
+cd qowlshop_app
 ```
 
 ### 2. Crear entorno virtual
@@ -215,7 +215,7 @@ Crea un archivo `.env`:
 ```env
 SECRET_KEY=tu-clave-secreta-super-segura
 FLASK_ENV=development
-DATABASE_URL=sqlite:///ecommerce.db
+DATABASE_URL=sqlite:///qowlshop.db
 ```
 
 ### Configuración de Uploads
@@ -271,7 +271,7 @@ En `config.py`:
 - Verás que el stock se redujo automáticamente
 
 #### 5. Panel Admin
-1. Login como admin (`admin@ecommerce.com`)
+1. Login como admin (`admin@qowlshop.com`)
 2. Ve a `/admin`
 3. Verás estadísticas generales del sistema
 
@@ -437,7 +437,7 @@ python
 
 ### Resetear la base de datos:
 ```bash
-rm instance/ecommerce.db
+rm instance/qowlshop.db
 python run.py  # Se creará de nuevo con datos iniciales
 ```
 
