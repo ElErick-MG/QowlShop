@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Inicio - QowlShop{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center mt-5">
+        <div class="col-lg-8 text-center">
+            <h1 class="display-4 mb-4">
+                <i class="bi bi-shield-check text-primary"></i>
+                Bienvenido a QowlShop
+            </h1>
+            <p class="lead mb-5">
+                Sistema seguro de autenticación con Flask, Flask-Login y Flask-WTF
+            </p>
+            
+            {% if current_user.is_authenticated %}
+                <div class="alert alert-success">
+                    <h4 class="alert-heading">
+                        <i class="bi bi-check-circle"></i> ¡Sesión Activa!
+                    </h4>
+                    <p>Has iniciado sesión como <strong>{{ current_user.username }}</strong></p>
+                    <hr>
+                    <a href="{{ url_for('main.dashboard') }}" class="btn btn-success">
+                        Ir al Dashboard
+                    </a>
+                </div>
+            {% else %}
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="card h-100 shadow-sm">
+                            <div class="card-body d-flex flex-column">
+                                <h3 class="card-title">
+                                    <i class="bi bi-box-arrow-in-right text-primary"></i>
+                                    Iniciar Sesión
+                                </h3>
+                                <p class="card-text flex-grow-1">
+                                    ¿Ya tienes una cuenta? Inicia sesión para acceder a tu dashboard
+                                </p>
+                                <a href="{{ url_for('auth.login') }}" class="btn btn-primary">
+                                    Iniciar Sesión
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card h-100 shadow-sm">
+                            <div class="card-body d-flex flex-column">
+                                <h3 class="card-title">
+                                    <i class="bi bi-person-plus text-success"></i>
+                                    Registrarse
+                                </h3>
+                                <p class="card-text flex-grow-1">
+                                    ¿Nuevo aquí? Crea una cuenta gratuita en segundos
+                                </p>
+                                <a href="{{ url_for('auth.register') }}" class="btn btn-success">
+                                    Crear Cuenta
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+            
+            <div class="mt-5">
+                <h4 class="mb-3">Características</h4>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <i class="bi bi-shield-lock fs-1 text-primary"></i>
+                                <h5 class="mt-2">Seguridad</h5>
+                                <p class="small">Contraseñas hasheadas con Werkzeug</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <i class="bi bi-check2-circle fs-1 text-success"></i>
+                                <h5 class="mt-2">Validaciones</h5>
+                                <p class="small">Formularios validados con Flask-WTF</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <i class="bi bi-people fs-1 text-info"></i>
+                                <h5 class="mt-2">Roles</h5>
+                                <p class="small">Sistema de roles: Admin y Usuario</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
