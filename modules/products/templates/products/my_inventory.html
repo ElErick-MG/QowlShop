@@ -1,0 +1,324 @@
+{% extends "base.html" %}
+
+{% block title %}Mi Inventario - QowlShop{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background-color: #f7f9fc;
+    }
+
+    .inventory-header {
+        background: white;
+        padding: 25px 0;
+        border-bottom: 1px solid #e5e7eb;
+        margin-bottom: 35px;
+    }
+
+    .inventory-header h3 {
+        font-weight: 600;
+        margin: 0;
+    }
+
+    /* Tarjetas estilo prototipo */
+    .producto-card {
+        background: white;
+        border-radius: 18px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        overflow: hidden;
+        transition: 0.25s;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .producto-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+    }
+
+    .producto-card img {
+        width: 100%;
+        height: 230px;
+        object-fit: cover;
+    }
+
+    .producto-card .no-image {
+        width: 100%;
+        height: 230px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 3rem;
+    }
+
+    .badge-stock {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        padding: 5px 12px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .badge-green { 
+        background: #d1fae5; 
+        color: #065f46; 
+    }
+    
+    .badge-yellow { 
+        background: #fef3c7; 
+        color: #b45309; 
+    }
+    
+    .badge-red { 
+        background: #fee2e2; 
+        color: #991b1b; 
+    }
+
+    /* Estilo para productos inactivos */
+    .producto-card.inactive {
+        opacity: 0.6;
+    }
+
+    .producto-card.inactive img,
+    .producto-card.inactive .no-image {
+        filter: grayscale(100%);
+    }
+
+    .producto-body {
+        padding: 20px;
+        flex: 1;
+    }
+
+    .producto-body h5 {
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    .product-code {
+        color: #6b7280;
+        font-size: 0.85rem;
+        margin-bottom: 10px;
+    }
+
+    .price {
+        color: #2563eb;
+        font-weight: 600;
+        font-size: 1.25rem;
+        margin: 10px 0;
+    }
+
+    .stock-control {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-top: 1px solid #e5e7eb;
+        padding: 12px 20px;
+    }
+
+    .stock-info {
+        font-size: 0.95rem;
+    }
+
+    .btn-stock {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        font-size: 1.2rem;
+    }
+
+    .product-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 80px 20px;
+    }
+
+    .empty-state i {
+        font-size: 5rem;
+        color: #d1d5db;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="inventory-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col">
+                <h3>Maneja tu Inventario</h3>
+                <p class="text-muted mb-0">Gestiona tus productos y controla tu stock</p>
+            </div>
+            <div class="col-auto">
+                <a href="{{ url_for('products.create') }}" class="btn btn-primary px-4">
+                    <i class="bi bi-plus-circle me-2"></i>Agregar Producto
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    {% if products %}
+        <div class="row mb-3">
+            <div class="col">
+                <h4>Mis Productos ({{ pagination.total }})</h4>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            {% for product in products %}
+            <div class="col-md-4">
+                <div class="producto-card position-relative {% if not product.is_active %}inactive{% endif %}">
+                    <!-- Badge de stock -->
+                    {% if product.stock == 0 %}
+                        <span class="badge-stock badge-red">Sin Stock</span>
+                    {% elif product.stock < 10 %}
+                        <span class="badge-stock badge-yellow">Stock Bajo</span>
+                    {% else %}
+                        <span class="badge-stock badge-green">En Stock</span>
+                    {% endif %}
+
+                    <!-- Imagen -->
+                    {% if product.image_url %}
+                        <img src="{{ url_for('static', filename=product.image_url) }}" alt="{{ product.name }}">
+                    {% else %}
+                        <div class="no-image">
+                            <i class="bi bi-box-seam"></i>
+                        </div>
+                    {% endif %}
+
+                    <!-- Cuerpo del producto -->
+                    <div class="producto-body">
+                        <div class="product-code">Código: {{ product.code }}</div>
+                        <h5>{{ product.name }}</h5>
+                        
+                        {% if product.description %}
+                            <p class="text-muted small">
+                                {{ product.description[:80] }}{% if product.description|length > 80 %}...{% endif %}
+                            </p>
+                        {% endif %}
+                        
+                        <p class="price">{{ product.price|currency }}</p>
+                        
+                        {% if product.category %}
+                            <span class="badge bg-secondary">{{ product.category.name }}</span>
+                        {% endif %}
+                        
+                        {% if not product.is_active %}
+                            <span class="badge bg-danger">Inactivo</span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Control de stock -->
+                    <div class="stock-control">
+                        <div class="stock-info">
+                            Stock: <strong>{{ product.stock }} unidades</strong>
+                        </div>
+                        <div class="product-actions">
+                            {% if product.is_active %}
+                                <a href="{{ url_for('products.edit', id=product.id) }}" 
+                                   class="btn btn-sm btn-outline-primary btn-stock" 
+                                   title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <button type="button" 
+                                        class="btn btn-sm btn-outline-danger btn-stock" 
+                                        title="Eliminar"
+                                        onclick="confirmDelete('{{ product.id }}', '{{ product.name }}')">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            {% else %}
+                                <button type="button" 
+                                        class="btn btn-sm btn-outline-success btn-stock" 
+                                        title="Reactivar"
+                                        onclick="confirmReactivate('{{ product.id }}', '{{ product.name }}')">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Paginación -->
+        {% if pagination.pages > 1 %}
+        <nav aria-label="Paginación de productos" class="mt-5">
+            <ul class="pagination justify-content-center">
+                <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('products.my_inventory', page=pagination.prev_num) if pagination.has_prev else '#' }}">
+                        Anterior
+                    </a>
+                </li>
+                
+                {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                    {% if page_num %}
+                        <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('products.my_inventory', page=page_num) }}">
+                                {{ page_num }}
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+                
+                <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('products.my_inventory', page=pagination.next_num) if pagination.has_next else '#' }}">
+                        Siguiente
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        {% endif %}
+
+    {% else %}
+        <!-- Estado vacío -->
+        <div class="empty-state">
+            <i class="bi bi-inbox"></i>
+            <h4>No tienes productos aún</h4>
+            <p class="text-muted">Comienza a vender publicando tu primer producto</p>
+            <a href="{{ url_for('products.create') }}" class="btn btn-primary mt-3">
+                <i class="bi bi-plus-circle me-2"></i>Publicar Primer Producto
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Formulario oculto para acciones -->
+<form id="actionForm" method="POST" style="display: none;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmDelete(productId, productName) {
+    if (confirm(`¿Estás seguro de eliminar "${productName}"?\n\nEsta acción desactivará el producto.`)) {
+        const form = document.getElementById('actionForm');
+        form.action = `/products/${productId}/delete`;
+        form.submit();
+    }
+}
+
+function confirmReactivate(productId, productName) {
+    if (confirm(`¿Deseas reactivar "${productName}"?\n\nEl producto volverá a estar disponible.`)) {
+        const form = document.getElementById('actionForm');
+        form.action = `/products/${productId}/reactivate`;
+        form.submit();
+    }
+}
+</script>
+{% endblock %}

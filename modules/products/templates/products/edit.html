@@ -1,0 +1,288 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Producto - QowlShop{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background-color: #f7f9fc;
+    }
+
+    .form-container {
+        max-width: 800px;
+        margin: 40px auto;
+    }
+
+    .form-card {
+        background: white;
+        border-radius: 18px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        padding: 40px;
+    }
+
+    .form-card h2 {
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+
+    .form-card .subtitle {
+        color: #6b7280;
+        margin-bottom: 30px;
+    }
+
+    .form-label {
+        font-weight: 500;
+        color: #374151;
+        margin-bottom: 8px;
+    }
+
+    .form-control, .form-select {
+        border-radius: 10px;
+        border: 1px solid #d1d5db;
+        padding: 12px 16px;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    .current-image {
+        max-width: 100%;
+        max-height: 300px;
+        border-radius: 12px;
+        margin-bottom: 15px;
+    }
+
+    .image-preview-container {
+        margin-top: 15px;
+    }
+
+    .image-preview {
+        max-width: 100%;
+        max-height: 300px;
+        border-radius: 12px;
+        display: none;
+    }
+
+    .btn-primary {
+        padding: 12px 40px;
+        border-radius: 10px;
+        font-weight: 500;
+    }
+
+    .btn-secondary {
+        padding: 12px 40px;
+        border-radius: 10px;
+        font-weight: 500;
+    }
+
+    .invalid-feedback {
+        font-size: 0.875rem;
+    }
+
+    .required-field::after {
+        content: " *";
+        color: #dc2626;
+    }
+
+    .alert-info {
+        border-radius: 12px;
+        border-left: 4px solid #2563eb;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container form-container">
+    <div class="form-card">
+        <!-- Header -->
+        <div class="text-center mb-4">
+            <h2>Editar Producto</h2>
+            <p class="subtitle">Actualiza la información de tu producto</p>
+        </div>
+
+        <!-- Información del producto -->
+        <div class="alert alert-info">
+            <strong>Editando:</strong> {{ product.name }} ({{ product.code }})
+        </div>
+
+        <!-- Formulario -->
+        <form method="POST" enctype="multipart/form-data" novalidate>
+            {{ form.hidden_tag() }}
+
+            <div class="row">
+                <!-- Código del Producto -->
+                <div class="col-md-6 mb-3">
+                    <label for="{{ form.code.id }}" class="form-label required-field">
+                        {{ form.code.label.text }}
+                    </label>
+                    {{ form.code(class="form-control" + (" is-invalid" if form.code.errors else ""), placeholder="Ej: PROD001") }}
+                    {% if form.code.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.code.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <small class="text-muted">Código único para identificar tu producto</small>
+                </div>
+
+                <!-- Categoría -->
+                <div class="col-md-6 mb-3">
+                    <label for="{{ form.category_id.id }}" class="form-label">
+                        {{ form.category_id.label.text }}
+                    </label>
+                    {{ form.category_id(class="form-select" + (" is-invalid" if form.category_id.errors else "")) }}
+                    {% if form.category_id.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.category_id.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Nombre del Producto -->
+            <div class="mb-3">
+                <label for="{{ form.name.id }}" class="form-label required-field">
+                    {{ form.name.label.text }}
+                </label>
+                {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else ""), placeholder="Ej: Laptop HP 15.6 pulgadas") }}
+                {% if form.name.errors %}
+                    <div class="invalid-feedback">
+                        {% for error in form.name.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Descripción -->
+            <div class="mb-3">
+                <label for="{{ form.description.id }}" class="form-label">
+                    {{ form.description.label.text }}
+                </label>
+                {{ form.description(class="form-control" + (" is-invalid" if form.description.errors else ""), rows="4", placeholder="Describe las características principales de tu producto...") }}
+                {% if form.description.errors %}
+                    <div class="invalid-feedback">
+                        {% for error in form.description.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                <small class="text-muted">Ayuda a los compradores a conocer mejor tu producto</small>
+            </div>
+
+            <div class="row">
+                <!-- Precio -->
+                <div class="col-md-6 mb-3">
+                    <label for="{{ form.price.id }}" class="form-label required-field">
+                        {{ form.price.label.text }}
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text">$</span>
+                        {{ form.price(class="form-control" + (" is-invalid" if form.price.errors else ""), placeholder="99.99") }}
+                        {% if form.price.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.price.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Stock -->
+                <div class="col-md-6 mb-3">
+                    <label for="{{ form.stock.id }}" class="form-label required-field">
+                        {{ form.stock.label.text }}
+                    </label>
+                    {{ form.stock(class="form-control" + (" is-invalid" if form.stock.errors else ""), placeholder="10", min="0") }}
+                    {% if form.stock.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.stock.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <small class="text-muted">Cantidad disponible para vender</small>
+                </div>
+            </div>
+
+            <!-- Imagen -->
+            <div class="mb-4">
+                <label for="{{ form.image.id }}" class="form-label">
+                    {{ form.image.label.text }}
+                </label>
+                
+                <!-- Imagen actual -->
+                {% if product.image_url %}
+                <div>
+                    <p class="text-muted small mb-2">Imagen actual:</p>
+                    <img src="{{ url_for('static', filename=product.image_url) }}" 
+                         class="current-image" 
+                         alt="{{ product.name }}">
+                </div>
+                {% endif %}
+                
+                {{ form.image(class="form-control" + (" is-invalid" if form.image.errors else ""), accept="image/*", onchange="previewImage(event)") }}
+                {% if form.image.errors %}
+                    <div class="invalid-feedback">
+                        {% for error in form.image.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                <small class="text-muted">
+                    {% if product.image_url %}
+                        Sube una nueva imagen para reemplazar la actual.
+                    {% else %}
+                        Formatos permitidos: JPG, PNG, GIF, WEBP (máx. 16MB)
+                    {% endif %}
+                </small>
+                
+                <!-- Vista previa de nueva imagen -->
+                <div class="image-preview-container">
+                    <p class="text-muted small mb-2" id="newImageLabel" style="display: none;">Nueva imagen:</p>
+                    <img id="imagePreview" class="image-preview" alt="Vista previa">
+                </div>
+            </div>
+
+            <!-- Botones -->
+            <div class="d-flex justify-content-between align-items-center">
+                <a href="{{ url_for('products.my_inventory') }}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left me-2"></i>Cancelar
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-circle me-2"></i>Guardar Cambios
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function previewImage(event) {
+    const file = event.target.files[0];
+    const preview = document.getElementById('imagePreview');
+    const label = document.getElementById('newImageLabel');
+    
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            preview.src = e.target.result;
+            preview.style.display = 'block';
+            label.style.display = 'block';
+        }
+        reader.readAsDataURL(file);
+    } else {
+        preview.style.display = 'none';
+        label.style.display = 'none';
+    }
+}
+</script>
+{% endblock %}

@@ -162,6 +162,29 @@ def delete(id):
     
     return redirect(url_for('products.my_inventory'))
 
+@products_bp.route('/<int:id>/reactivate', methods=['POST'])
+@login_required
+@seller_required
+def reactivate(id):
+    """Reactivar producto desactivado"""
+    product = Product.query.get_or_404(id)
+    
+    # Verificar permisos
+    if product.seller_id != current_user.id and not current_user.is_admin():
+        abort(403)
+    
+    try:
+        # Reactivar producto
+        product.is_active = True
+        db.session.commit()
+        flash(f'Producto "{product.name}" reactivado exitosamente.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('Error al reactivar el producto.', 'danger')
+        print(f"Error reactivando producto: {e}")
+    
+    return redirect(url_for('products.my_inventory'))
+
 @products_bp.route('/my-inventory')
 @login_required
 @seller_required
