@@ -79,6 +79,18 @@
                         {% endif %}
                     </div>
                     
+                    <!-- Checkbox Vendedor -->
+                    <div class="mb-4">
+                        <div class="form-check">
+                            {{ form.is_seller(class="form-check-input") }}
+                            {{ form.is_seller.label(class="form-check-label") }}
+                        </div>
+                        <small class="text-muted ms-4">
+                            <i class="bi bi-info-circle"></i> 
+                            Marca esta opción si deseas publicar y vender tus propios productos
+                        </small>
+                    </div>
+                    
                     <!-- Botón Submit -->
                     <div class="d-grid">
                         {{ form.submit(class="btn btn-success btn-lg") }}

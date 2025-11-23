@@ -37,10 +37,21 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
+                    <!-- Enlace al catálogo (visible para todos) -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('products.list_products') }}">
+                            <i class="bi bi-shop"></i> Productos
+                        </a>
+                    </li>
                     {% if current_user.is_authenticated %}
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('main.dashboard') }}">
                                 <i class="bi bi-speedometer2"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('cart.view_cart') }}">
+                                <i class="bi bi-cart3"></i> Carrito
                             </a>
                         </li>
                         {% if current_user.is_seller %}

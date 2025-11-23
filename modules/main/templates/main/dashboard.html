@@ -31,8 +31,12 @@
                             <p><strong>Rol:</strong></p>
                             {% if current_user.is_admin() %}
                                 <span class="badge bg-danger">Administrador</span>
-                            {% else %}
-                                <span class="badge bg-primary">Usuario</span>
+                            {% endif %}
+                            {% if current_user.is_seller %}
+                                <span class="badge bg-success">Vendedor</span>
+                            {% endif %}
+                            {% if not current_user.is_admin() and not current_user.is_seller %}
+                                <span class="badge bg-primary">Comprador</span>
                             {% endif %}
                         </div>
                         <div class="col-md-6">

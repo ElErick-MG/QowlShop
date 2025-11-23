@@ -1,0 +1,306 @@
+{% extends "base.html" %}
+
+{% block title %}Productos - QowlShop{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background-color: #f7f9fc;
+    }
+
+    .products-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 60px 0 40px;
+        margin-bottom: 40px;
+    }
+
+    .products-header h1 {
+        font-weight: 700;
+        margin-bottom: 15px;
+    }
+
+    /* Barra de búsqueda */
+    .search-bar {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        margin-top: 30px;
+    }
+
+    .search-bar .form-control,
+    .search-bar .form-select {
+        border-radius: 10px;
+    }
+
+    /* Tarjetas de productos */
+    .product-card {
+        background: white;
+        border-radius: 18px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        overflow: hidden;
+        transition: 0.25s;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .product-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        text-decoration: none;
+    }
+
+    .product-card img {
+        width: 100%;
+        height: 250px;
+        object-fit: cover;
+    }
+
+    .product-card .no-image {
+        width: 100%;
+        height: 250px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 4rem;
+    }
+
+    .product-body {
+        padding: 20px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .product-body h5 {
+        font-weight: 600;
+        margin-bottom: 10px;
+        color: #1f2937;
+    }
+
+    .product-code {
+        color: #6b7280;
+        font-size: 0.85rem;
+        margin-bottom: 10px;
+    }
+
+    .product-description {
+        color: #6b7280;
+        font-size: 0.9rem;
+        flex: 1;
+    }
+
+    .price {
+        color: #2563eb;
+        font-weight: 700;
+        font-size: 1.5rem;
+        margin: 15px 0 10px;
+    }
+
+    .stock-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .stock-available {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .stock-low {
+        background: #fef3c7;
+        color: #b45309;
+    }
+
+    .btn-add-cart {
+        width: 100%;
+        border-radius: 10px;
+        padding: 10px;
+        font-weight: 500;
+        margin-top: 10px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 100px 20px;
+    }
+
+    .empty-state i {
+        font-size: 6rem;
+        color: #d1d5db;
+        margin-bottom: 20px;
+    }
+
+    .filters-summary {
+        background: #f3f4f6;
+        padding: 10px 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="products-header">
+    <div class="container">
+        <h1><i class="bi bi-shop"></i> Catálogo de Productos</h1>
+        <p class="lead mb-0">Descubre los mejores productos al mejor precio</p>
+        
+        <!-- Barra de búsqueda y filtros -->
+        <div class="search-bar">
+            <form method="GET" action="{{ url_for('products.list_products') }}">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        {{ form.search(class="form-control", placeholder="Buscar por nombre o código...") }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ form.min_price(class="form-control", placeholder="Precio mín.") }}
+                    </div>
+                    <div class="col-md-2">
+                        {{ form.max_price(class="form-control", placeholder="Precio máx.") }}
+                    </div>
+                    <div class="col-md-3">
+                        {{ form.category_id(class="form-select") }}
+                    </div>
+                    <div class="col-md-1">
+                        <button type="submit" class="btn btn-light w-100">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="container mb-5">
+    <!-- Resumen de resultados -->
+    {% if products %}
+        <div class="filters-summary">
+            <div class="d-flex justify-content-between align-items-center">
+                <span>
+                    <i class="bi bi-funnel"></i>
+                    Se encontraron <strong>{{ pagination.total }}</strong> productos
+                </span>
+                {% if form.search.data or form.min_price.data or form.max_price.data or (form.category_id.data and form.category_id.data > 0) %}
+                    <a href="{{ url_for('products.list_products') }}" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-x-circle"></i> Limpiar filtros
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Grid de productos -->
+        <div class="row g-4">
+            {% for product in products %}
+            <div class="col-md-4 col-lg-3">
+                <a href="{{ url_for('products.detail', id=product.id) }}" class="product-card">
+                    <!-- Imagen -->
+                    {% if product.image_url %}
+                        <img src="{{ url_for('static', filename=product.image_url) }}" alt="{{ product.name }}">
+                    {% else %}
+                        <div class="no-image">
+                            <i class="bi bi-box-seam"></i>
+                        </div>
+                    {% endif %}
+
+                    <!-- Cuerpo -->
+                    <div class="product-body">
+                        <div class="product-code">{{ product.code }}</div>
+                        <h5>{{ product.name }}</h5>
+                        
+                        {% if product.description %}
+                            <p class="product-description">
+                                {{ product.description[:100] }}{% if product.description|length > 100 %}...{% endif %}
+                            </p>
+                        {% endif %}
+                        
+                        <div class="mt-auto">
+                            <p class="price">{{ product.price|currency }}</p>
+                            
+                            {% if product.stock < 10 %}
+                                <span class="stock-badge stock-low">
+                                    Solo {{ product.stock }} disponibles
+                                </span>
+                            {% else %}
+                                <span class="stock-badge stock-available">
+                                    Disponible
+                                </span>
+                            {% endif %}
+                            
+                            {% if product.category %}
+                                <div class="mt-2">
+                                    <span class="badge bg-secondary">{{ product.category.name }}</span>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Paginación -->
+        {% if pagination.pages > 1 %}
+        <nav aria-label="Paginación de productos" class="mt-5">
+            <ul class="pagination justify-content-center">
+                <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('products.list_products', page=pagination.prev_num, search=form.search.data, min_price=form.min_price.data, max_price=form.max_price.data, category_id=form.category_id.data) if pagination.has_prev else '#' }}">
+                        <i class="bi bi-chevron-left"></i> Anterior
+                    </a>
+                </li>
+                
+                {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                    {% if page_num %}
+                        <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('products.list_products', page=page_num, search=form.search.data, min_price=form.min_price.data, max_price=form.max_price.data, category_id=form.category_id.data) }}">
+                                {{ page_num }}
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+                
+                <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('products.list_products', page=pagination.next_num, search=form.search.data, min_price=form.min_price.data, max_price=form.max_price.data, category_id=form.category_id.data) if pagination.has_next else '#' }}">
+                        Siguiente <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        {% endif %}
+
+    {% else %}
+        <!-- Estado vacío -->
+        <div class="empty-state">
+            <i class="bi bi-inbox"></i>
+            <h3>No se encontraron productos</h3>
+            <p class="text-muted">
+                {% if form.search.data or form.min_price.data or form.max_price.data %}
+                    Intenta ajustar los filtros de búsqueda
+                {% else %}
+                    Aún no hay productos disponibles
+                {% endif %}
+            </p>
+            {% if form.search.data or form.min_price.data or form.max_price.data or (form.category_id.data and form.category_id.data > 0) %}
+                <a href="{{ url_for('products.list_products') }}" class="btn btn-primary mt-3">
+                    Ver todos los productos
+                </a>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
