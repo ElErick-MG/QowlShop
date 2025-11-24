@@ -1,11 +1,11 @@
 """
 Rutas principales y dashboard
 """
-from flask import Blueprint, render_template, redirect, url_for
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required, current_user
 from modules.auth.decorators import admin_required
 from modules.auth.models import User
-from modules.products.models import Product
+from modules.products.models import Product, Category
 from modules.orders.models import Order, OrderItem
 from extensions import db
 
@@ -84,8 +84,156 @@ def admin_panel():
     # Órdenes recientes
     recent_orders = Order.query.order_by(Order.created_at.desc()).limit(10).all()
     
+    # Categorías
+    categories = Category.query.order_by(Category.name).all()
+    
     return render_template('main/admin.html',
                          stats=stats,
                          recent_users=recent_users,
                          recent_products=recent_products,
-                         recent_orders=recent_orders)
+                         recent_orders=recent_orders,
+                         categories=categories)
+
+# ==================== RUTAS DE ADMINISTRACIÓN ====================
+
+@main_bp.route('/admin/product/<int:id>/toggle-status', methods=['POST'])
+@login_required
+@admin_required
+def toggle_product_status(id):
+    """Activar/Desactivar un producto"""
+    product = Product.query.get_or_404(id)
+    
+    try:
+        product.is_active = not product.is_active
+        db.session.commit()
+        
+        status = "activado" if product.is_active else "desactivado"
+        flash(f'Producto "{product.name}" {status} exitosamente.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('Error al cambiar el estado del producto.', 'danger')
+        print(f"Error: {e}")
+    
+    return redirect(url_for('main.admin_panel'))
+
+@main_bp.route('/admin/product/<int:id>/delete', methods=['POST'])
+@login_required
+@admin_required
+def delete_product(id):
+    """Eliminar un producto (solo admin)"""
+    product = Product.query.get_or_404(id)
+    
+    try:
+        # Verificar si el producto tiene órdenes asociadas
+        order_items_count = OrderItem.query.filter_by(product_id=id).count()
+        
+        if order_items_count > 0:
+            # No eliminar, solo desactivar
+            product.is_active = False
+            db.session.commit()
+            flash(f'El producto "{product.name}" ha sido desactivado porque tiene órdenes asociadas.', 'warning')
+        else:
+            # Eliminar completamente
+            product_name = product.name
+            db.session.delete(product)
+            db.session.commit()
+            flash(f'Producto "{product_name}" eliminado permanentemente.', 'info')
+    except Exception as e:
+        db.session.rollback()
+        flash('Error al eliminar el producto.', 'danger')
+        print(f"Error: {e}")
+    
+    return redirect(url_for('main.admin_panel'))
+
+@main_bp.route('/admin/user/<int:id>/toggle-seller', methods=['POST'])
+@login_required
+@admin_required
+def toggle_seller_status(id):
+    """Convertir usuario en vendedor o viceversa"""
+    user = User.query.get_or_404(id)
+    
+    # No permitir modificar admins
+    if user.is_admin():
+        flash('No se puede modificar el rol de un administrador.', 'danger')
+        return redirect(url_for('main.admin_panel'))
+    
+    try:
+        user.is_seller = not user.is_seller
+        db.session.commit()
+        
+        status = "vendedor" if user.is_seller else "comprador"
+        flash(f'Usuario "{user.username}" ahora es {status}.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('Error al cambiar el rol del usuario.', 'danger')
+        print(f"Error: {e}")
+    
+    return redirect(url_for('main.admin_panel'))
+
+@main_bp.route('/admin/category/add', methods=['POST'])
+@login_required
+@admin_required
+def add_category():
+    """Agregar nueva categoría"""
+    name = request.form.get('name', '').strip()
+    slug = request.form.get('slug', '').strip()
+    description = request.form.get('description', '').strip()
+    
+    if not name or not slug:
+        flash('El nombre y slug son obligatorios.', 'danger')
+        return redirect(url_for('main.admin_panel'))
+    
+    # Verificar que el slug sea único
+    existing = Category.query.filter_by(slug=slug).first()
+    if existing:
+        flash(f'Ya existe una categoría con el slug "{slug}".', 'danger')
+        return redirect(url_for('main.admin_panel'))
+    
+    try:
+        category = Category(
+            name=name,
+            slug=slug,
+            description=description
+        )
+        db.session.add(category)
+        db.session.commit()
+        
+        flash(f'Categoría "{name}" creada exitosamente.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('Error al crear la categoría.', 'danger')
+        print(f"Error: {e}")
+    
+    return redirect(url_for('main.admin_panel'))
+
+@main_bp.route('/admin/category/<int:id>/delete', methods=['POST'])
+@login_required
+@admin_required
+def delete_category(id):
+    """Eliminar una categoría"""
+    category = Category.query.get_or_404(id)
+    
+    # Verificar si tiene productos asociados
+    products_count = category.products.count()
+    
+    if products_count > 0:
+        return jsonify({
+            'success': False,
+            'message': f'No se puede eliminar. Tiene {products_count} productos asociados.'
+        }), 400
+    
+    try:
+        category_name = category.name
+        db.session.delete(category)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Categoría "{category_name}" eliminada.'
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'message': 'Error al eliminar la categoría.'
+        }), 500

@@ -1,0 +1,479 @@
+{% extends "base.html" %}
+
+{% block title %}Panel de Administración - QowlShop{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card {
+        transition: transform 0.2s;
+        border-left: 4px solid;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .stat-card.primary { border-left-color: #0d6efd; }
+    .stat-card.success { border-left-color: #198754; }
+    .stat-card.warning { border-left-color: #ffc107; }
+    .stat-card.danger { border-left-color: #dc3545; }
+    .stat-card.info { border-left-color: #0dcaf0; }
+    
+    .product-thumb-admin {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+        border-radius: 8px;
+    }
+    
+    .action-btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+    
+    .tab-content {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-top: none;
+        border-radius: 0 0 0.375rem 0.375rem;
+        padding: 1.5rem;
+    }
+    
+    .nav-tabs {
+        border-bottom: 2px solid #0d6efd;
+    }
+    
+    .nav-tabs .nav-link {
+        color: #6c757d;
+        font-weight: 500;
+    }
+    
+    .nav-tabs .nav-link.active {
+        color: #0d6efd;
+        border-color: #dee2e6 #dee2e6 #fff;
+        border-bottom-color: #fff;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="display-5">
+                <i class="bi bi-shield-check text-primary"></i> Panel de Administración
+            </h1>
+            <p class="text-muted">Control total de la plataforma QowlShop</p>
+        </div>
+    </div>
+
+    <!-- Estadísticas Generales -->
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="card stat-card primary h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">Total Usuarios</h6>
+                            <h2 class="mb-0 text-primary">{{ stats.total_users }}</h2>
+                            <small class="text-muted">
+                                <i class="bi bi-shop"></i> {{ stats.total_sellers }} vendedores
+                            </small>
+                        </div>
+                        <div class="text-primary" style="font-size: 3rem;">
+                            <i class="bi bi-people"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <div class="card stat-card success h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">Total Productos</h6>
+                            <h2 class="mb-0 text-success">{{ stats.total_products }}</h2>
+                            <small class="text-muted">
+                                <i class="bi bi-check-circle"></i> {{ stats.active_products }} activos
+                            </small>
+                        </div>
+                        <div class="text-success" style="font-size: 3rem;">
+                            <i class="bi bi-box-seam"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <div class="card stat-card info h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">Ingresos Totales</h6>
+                            <h2 class="mb-0 text-info">{{ stats.total_revenue|currency }}</h2>
+                            <small class="text-muted">
+                                <i class="bi bi-receipt"></i> {{ stats.total_orders }} órdenes
+                            </small>
+                        </div>
+                        <div class="text-info" style="font-size: 3rem;">
+                            <i class="bi bi-cash-stack"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs de Gestión -->
+    <ul class="nav nav-tabs" id="adminTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="products-tab" data-bs-toggle="tab" data-bs-target="#products" type="button">
+                <i class="bi bi-box-seam"></i> Gestión de Productos
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="users-tab" data-bs-toggle="tab" data-bs-target="#users" type="button">
+                <i class="bi bi-people"></i> Gestión de Usuarios
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="orders-tab" data-bs-toggle="tab" data-bs-target="#orders" type="button">
+                <i class="bi bi-receipt"></i> Órdenes Recientes
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="categories-tab" data-bs-toggle="tab" data-bs-target="#categories" type="button">
+                <i class="bi bi-tags"></i> Categorías
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="adminTabsContent">
+        <!-- TAB: Gestión de Productos -->
+        <div class="tab-pane fade show active" id="products" role="tabpanel">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4><i class="bi bi-box-seam"></i> Productos en la Plataforma</h4>
+                <div>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#filterModal">
+                        <i class="bi bi-funnel"></i> Filtrar
+                    </button>
+                </div>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Producto</th>
+                            <th>Vendedor</th>
+                            <th>Categoría</th>
+                            <th>Precio</th>
+                            <th>Stock</th>
+                            <th>Estado</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in recent_products %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    {% if product.image_url %}
+                                    <img src="{{ product.image_url }}" alt="{{ product.name }}" class="product-thumb-admin me-3">
+                                    {% else %}
+                                    <div class="product-thumb-admin me-3 bg-light d-flex align-items-center justify-content-center">
+                                        <i class="bi bi-image text-muted"></i>
+                                    </div>
+                                    {% endif %}
+                                    <div>
+                                        <strong>{{ product.name }}</strong><br>
+                                        <small class="text-muted">{{ product.code }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <i class="bi bi-person"></i> {{ product.seller.username }}
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">{{ product.category.name }}</span>
+                            </td>
+                            <td>{{ product.price|currency }}</td>
+                            <td>
+                                {% if product.stock == 0 %}
+                                    <span class="badge bg-danger">Sin stock</span>
+                                {% elif product.stock < 10 %}
+                                    <span class="badge bg-warning">{{ product.stock }}</span>
+                                {% else %}
+                                    <span class="badge bg-success">{{ product.stock }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if product.is_active %}
+                                    <span class="badge bg-success">Activo</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Inactivo</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <div class="btn-group" role="group">
+                                    <a href="{{ url_for('products.detail', id=product.id) }}" 
+                                       class="btn btn-sm btn-outline-primary action-btn" 
+                                       title="Ver">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    
+                                    {% if product.is_active %}
+                                    <form method="POST" 
+                                          action="{{ url_for('main.toggle_product_status', id=product.id) }}" 
+                                          class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" 
+                                                class="btn btn-sm btn-outline-warning action-btn" 
+                                                title="Desactivar"
+                                                onclick="return confirm('¿Desactivar este producto?');">
+                                            <i class="bi bi-pause-circle"></i>
+                                        </button>
+                                    </form>
+                                    {% else %}
+                                    <form method="POST" 
+                                          action="{{ url_for('main.toggle_product_status', id=product.id) }}" 
+                                          class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" 
+                                                class="btn btn-sm btn-outline-success action-btn" 
+                                                title="Activar">
+                                            <i class="bi bi-play-circle"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                    
+                                    <form method="POST" 
+                                          action="{{ url_for('main.delete_product', id=product.id) }}" 
+                                          class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" 
+                                                class="btn btn-sm btn-outline-danger action-btn" 
+                                                title="Eliminar"
+                                                onclick="return confirm('¿ELIMINAR este producto permanentemente?');">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="text-center mt-3">
+                <a href="{{ url_for('products.list_products') }}" class="btn btn-outline-primary">
+                    Ver todos los productos <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- TAB: Gestión de Usuarios -->
+        <div class="tab-pane fade" id="users" role="tabpanel">
+            <h4 class="mb-3"><i class="bi bi-people"></i> Usuarios Registrados</h4>
+            
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Usuario</th>
+                            <th>Email</th>
+                            <th>Rol</th>
+                            <th>Fecha de Registro</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in recent_users %}
+                        <tr>
+                            <td>
+                                <i class="bi bi-person-circle"></i> {{ user.username }}
+                            </td>
+                            <td>{{ user.email }}</td>
+                            <td>
+                                {% if user.is_admin() %}
+                                    <span class="badge bg-danger">Admin</span>
+                                {% endif %}
+                                {% if user.is_seller %}
+                                    <span class="badge bg-success">Vendedor</span>
+                                {% else %}
+                                    <span class="badge bg-primary">Comprador</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ user.created_at|datetime('%d/%m/%Y') }}</td>
+                            <td class="text-center">
+                                <div class="btn-group" role="group">
+                                    {% if not user.is_admin() %}
+                                    <form method="POST" 
+                                          action="{{ url_for('main.toggle_seller_status', id=user.id) }}" 
+                                          class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" 
+                                                class="btn btn-sm btn-outline-primary action-btn" 
+                                                title="{{ 'Quitar vendedor' if user.is_seller else 'Hacer vendedor' }}">
+                                            <i class="bi bi-shop"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB: Órdenes Recientes -->
+        <div class="tab-pane fade" id="orders" role="tabpanel">
+            <h4 class="mb-3"><i class="bi bi-receipt"></i> Últimas Órdenes</h4>
+            
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Número de Orden</th>
+                            <th>Comprador</th>
+                            <th>Total</th>
+                            <th>Estado</th>
+                            <th>Fecha</th>
+                            <th class="text-center">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in recent_orders %}
+                        <tr>
+                            <td><strong>{{ order.order_number }}</strong></td>
+                            <td>
+                                <i class="bi bi-person"></i> {{ order.buyer.username }}
+                            </td>
+                            <td>{{ order.total_amount|currency }}</td>
+                            <td>
+                                {% if order.status == 'completed' %}
+                                    <span class="badge bg-success">Completada</span>
+                                {% elif order.status == 'pending' %}
+                                    <span class="badge bg-warning">Pendiente</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Cancelada</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ order.created_at|datetime('%d/%m/%Y %H:%M') }}</td>
+                            <td class="text-center">
+                                <a href="{{ url_for('orders.detail', id=order.id) }}" 
+                                   class="btn btn-sm btn-outline-primary action-btn">
+                                    <i class="bi bi-eye"></i> Ver
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB: Categorías -->
+        <div class="tab-pane fade" id="categories" role="tabpanel">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4><i class="bi bi-tags"></i> Gestión de Categorías</h4>
+                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+                    <i class="bi bi-plus-circle"></i> Nueva Categoría
+                </button>
+            </div>
+            
+            <div class="row">
+                {% for category in categories %}
+                <div class="col-md-6 mb-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h5 class="card-title">{{ category.name }}</h5>
+                                    <p class="card-text text-muted">{{ category.description }}</p>
+                                    <small class="text-muted">
+                                        <i class="bi bi-box"></i> {{ category.products.count() }} productos
+                                    </small>
+                                </div>
+                                <div>
+                                    <button class="btn btn-sm btn-outline-danger" 
+                                            onclick="deleteCategory({{ category.id }}, '{{ category.name }}')">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Nueva Categoría -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('main.add_category') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-plus-circle"></i> Nueva Categoría
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="categoryName" class="form-label">Nombre *</label>
+                        <input type="text" class="form-control" id="categoryName" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="categorySlug" class="form-label">Slug *</label>
+                        <input type="text" class="form-control" id="categorySlug" name="slug" required>
+                        <small class="text-muted">URL amigable (ej: electronica, ropa-deportiva)</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="categoryDescription" class="form-label">Descripción</label>
+                        <textarea class="form-control" id="categoryDescription" name="description" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-circle"></i> Crear Categoría
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function deleteCategory(categoryId, categoryName) {
+    if (confirm(`¿Eliminar la categoría "${categoryName}"?`)) {
+        fetch(`/admin/category/${categoryId}/delete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        });
+    }
+}
+</script>
+{% endblock %}
