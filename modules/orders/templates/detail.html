@@ -1,0 +1,354 @@
+{% extends "base.html" %}
+
+{% block title %}Orden {{ order.order_number }} - QowlShop{% endblock %}
+
+{% block extra_css %}
+<style>
+    .order-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+    }
+    .status-badge-large {
+        font-size: 1rem;
+        padding: 0.5rem 1rem;
+    }
+    .order-item-row {
+        transition: background 0.2s;
+    }
+    .order-item-row:hover {
+        background: #f8f9fa;
+    }
+    .product-thumb {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 8px;
+    }
+    .timeline {
+        position: relative;
+        padding-left: 30px;
+    }
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 8px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #dee2e6;
+    }
+    .timeline-item {
+        position: relative;
+        padding-bottom: 20px;
+    }
+    .timeline-icon {
+        position: absolute;
+        left: -26px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: white;
+        border: 3px solid #198754;
+    }
+    .info-box {
+        border-left: 4px solid #0d6efd;
+        background: #f8f9fa;
+        padding: 1rem;
+        border-radius: 5px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Inicio</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('orders.my_purchases') }}">Mis Compras</a></li>
+            <li class="breadcrumb-item active">{{ order.order_number }}</li>
+        </ol>
+    </nav>
+
+    <!-- Header de la orden -->
+    <div class="order-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="display-6 mb-2">
+                    <i class="bi bi-receipt"></i> Orden {{ order.order_number }}
+                </h1>
+                <p class="mb-0">
+                    <i class="bi bi-calendar3"></i> 
+                    Fecha: {{ order.created_at|datetime('%d de %B de %Y a las %H:%M') }}
+                </p>
+            </div>
+            <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                {% if order.status == 'completed' %}
+                    <span class="badge bg-success status-badge-large">
+                        <i class="bi bi-check-circle"></i> COMPLETADA
+                    </span>
+                {% elif order.status == 'pending' %}
+                    <span class="badge bg-warning status-badge-large">
+                        <i class="bi bi-clock-history"></i> PENDIENTE
+                    </span>
+                {% else %}
+                    <span class="badge bg-danger status-badge-large">
+                        <i class="bi bi-x-circle"></i> CANCELADA
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Detalles de la orden -->
+        <div class="col-lg-8 mb-4">
+            <!-- Items de la orden -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-box-seam"></i> Productos Comprados
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Vendedor</th>
+                                    <th class="text-center">Cantidad</th>
+                                    <th class="text-end">Precio Unit.</th>
+                                    <th class="text-end">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in order.items %}
+                                <tr class="order-item-row">
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if item.product and item.product.image_url %}
+                                            <img src="{{ item.product.image_url }}" 
+                                                 alt="{{ item.product_name }}"
+                                                 class="product-thumb me-3">
+                                            {% else %}
+                                            <div class="product-thumb bg-light d-flex align-items-center justify-content-center me-3">
+                                                <i class="bi bi-image text-muted"></i>
+                                            </div>
+                                            {% endif %}
+                                            <div>
+                                                {% if item.product %}
+                                                <a href="{{ url_for('products.detail', id=item.product.id) }}" 
+                                                   class="text-decoration-none">
+                                                    <strong>{{ item.product_name }}</strong>
+                                                </a>
+                                                {% else %}
+                                                <strong>{{ item.product_name }}</strong>
+                                                <small class="text-muted d-block">(Producto no disponible)</small>
+                                                {% endif %}
+                                                <small class="text-muted">Código: {{ item.product_code }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <i class="bi bi-shop"></i> {{ item.seller.username }}
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-secondary">{{ item.quantity }}</span>
+                                    </td>
+                                    <td class="text-end">
+                                        {{ item.price_at_purchase|currency }}
+                                    </td>
+                                    <td class="text-end">
+                                        <strong class="text-success">{{ item.subtotal|currency }}</strong>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <td colspan="4" class="text-end"><strong>TOTAL:</strong></td>
+                                    <td class="text-end">
+                                        <h5 class="mb-0 text-primary">{{ order.total_amount|currency }}</h5>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información de entrega -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-truck"></i> Información de Entrega
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="info-box mb-3">
+                                <h6><i class="bi bi-person"></i> Comprador</h6>
+                                <p class="mb-0">{{ order.buyer.username }}</p>
+                                <small class="text-muted">{{ order.buyer.email }}</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-box mb-3">
+                                <h6><i class="bi bi-credit-card"></i> Método de Pago</h6>
+                                <p class="mb-0">
+                                    <i class="bi bi-credit-card-2-front"></i> Tarjeta de Crédito
+                                </p>
+                                <small class="text-muted">Procesado exitosamente</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Estado del envío:</strong> 
+                        {% if order.status == 'completed' %}
+                            Tu pedido ha sido procesado y será enviado pronto.
+                        {% elif order.status == 'pending' %}
+                            Tu pedido está siendo procesado.
+                        {% else %}
+                            Este pedido ha sido cancelado.
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acciones -->
+            {% if order.is_pending() %}
+            <div class="card border-warning">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="bi bi-exclamation-triangle text-warning"></i> 
+                        ¿Necesitas cancelar este pedido?
+                    </h6>
+                    <p class="text-muted mb-3">
+                        Solo puedes cancelar pedidos que estén en estado pendiente.
+                    </p>
+                    <form method="POST" 
+                          action="{{ url_for('orders.cancel', id=order.id) }}"
+                          onsubmit="return confirm('¿Estás seguro de que deseas cancelar esta orden? Esta acción no se puede deshacer.');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-warning">
+                            <i class="bi bi-x-circle"></i> Cancelar Orden
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Resumen -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-calculator"></i> Resumen
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Subtotal:</span>
+                        <span>{{ order.total_amount|currency }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Envío:</span>
+                        <span class="badge bg-success">GRATIS</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>IVA (12%):</span>
+                        <span>{{ tax_amount|currency }}</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between">
+                        <strong>Total Pagado:</strong>
+                        <strong class="h5 text-success mb-0">
+                            {{ total_with_tax|currency }}
+                        </strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Línea de tiempo -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-clock-history"></i> Historial
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-icon"></div>
+                            <strong>Orden creada</strong>
+                            <p class="text-muted mb-0">
+                                <small>{{ order.created_at|datetime('%d/%m/%Y %H:%M') }}</small>
+                            </p>
+                        </div>
+                        
+                        {% if order.is_completed() %}
+                        <div class="timeline-item">
+                            <div class="timeline-icon"></div>
+                            <strong>Pago confirmado</strong>
+                            <p class="text-muted mb-0">
+                                <small>{{ order.created_at|datetime('%d/%m/%Y %H:%M') }}</small>
+                            </p>
+                        </div>
+                        <div class="timeline-item">
+                            <div class="timeline-icon"></div>
+                            <strong>En preparación</strong>
+                            <p class="text-muted mb-0">
+                                <small>Procesando tu pedido</small>
+                            </p>
+                        </div>
+                        {% elif order.is_cancelled() %}
+                        <div class="timeline-item">
+                            <div class="timeline-icon" style="border-color: #dc3545;"></div>
+                            <strong class="text-danger">Orden cancelada</strong>
+                            <p class="text-muted mb-0">
+                                <small>{{ order.updated_at|datetime('%d/%m/%Y %H:%M') if order.updated_at else 'N/A' }}</small>
+                            </p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ayuda -->
+            <div class="card mt-4">
+                <div class="card-body text-center">
+                    <i class="bi bi-headset" style="font-size: 3rem; color: #0d6efd;"></i>
+                    <h6 class="mt-3">¿Necesitas ayuda?</h6>
+                    <p class="text-muted small mb-3">
+                        Nuestro equipo está disponible para asistirte
+                    </p>
+                    <a href="#" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-chat-dots"></i> Contactar Soporte
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botones de navegación -->
+    <div class="row mt-4">
+        <div class="col text-center">
+            <a href="{{ url_for('orders.my_purchases') }}" class="btn btn-outline-primary me-2">
+                <i class="bi bi-arrow-left"></i> Volver a Mis Compras
+            </a>
+            <a href="{{ url_for('products.list_products') }}" class="btn btn-primary">
+                <i class="bi bi-shop"></i> Seguir Comprando
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

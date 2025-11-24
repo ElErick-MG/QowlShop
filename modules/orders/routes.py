@@ -7,7 +7,7 @@ from extensions import db
 from modules.orders.models import Order, OrderItem
 from modules.products.models import Product
 from modules.auth.decorators import seller_required
-from sqlalchemy import desc
+from sqlalchemy import desc, or_
 
 orders_bp = Blueprint('orders', __name__, url_prefix='/orders', template_folder='templates')
 
@@ -24,7 +24,7 @@ def my_purchases():
     
     orders = pagination.items
     
-    return render_template('orders/my_purchases.html', 
+    return render_template('my_purchases.html', 
                          orders=orders, 
                          pagination=pagination)
 
@@ -32,28 +32,82 @@ def my_purchases():
 @login_required
 @seller_required
 def my_sales():
-    """Ver historial de ventas del vendedor"""
+    """Ver historial de ventas del vendedor con búsqueda y filtros"""
     page = request.args.get('page', 1, type=int)
     per_page = 20
     
-    # Obtener todos los items vendidos por el usuario actual
-    pagination = OrderItem.query.filter_by(seller_id=current_user.id)\
-        .join(Order)\
-        .order_by(desc(OrderItem.created_at))\
-        .paginate(page=page, per_page=per_page, error_out=False)
+    # Obtener parámetros de búsqueda y filtros
+    search_query = request.args.get('search', '').strip()
+    status_filter = request.args.get('status', '').strip()
     
+    # Construir query base
+    query = OrderItem.query.filter_by(seller_id=current_user.id).join(Order)
+    
+    # Aplicar filtro de búsqueda
+    if search_query:
+        query = query.filter(
+            or_(
+                OrderItem.product_name.ilike(f'%{search_query}%'),
+                OrderItem.product_code.ilike(f'%{search_query}%')
+            )
+        )
+    
+    # Aplicar filtro de estado
+    if status_filter:
+        query = query.filter(Order.status == status_filter)
+    
+    # Ordenar por fecha descendente
+    query = query.order_by(desc(OrderItem.created_at))
+    
+    # Paginar resultados
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
     order_items = pagination.items
     
-    # Calcular estadísticas
+    # Calcular estadísticas (considerando filtros)
+    stats_query = OrderItem.query.filter_by(seller_id=current_user.id)
+    
+    # Aplicar mismos filtros a estadísticas
+    if search_query:
+        stats_query = stats_query.filter(
+            or_(
+                OrderItem.product_name.ilike(f'%{search_query}%'),
+                OrderItem.product_code.ilike(f'%{search_query}%')
+            )
+        )
+    if status_filter:
+        stats_query = stats_query.join(Order).filter(Order.status == status_filter)
+    
     total_sales = db.session.query(db.func.sum(OrderItem.subtotal))\
-        .filter_by(seller_id=current_user.id)\
-        .scalar() or 0
+        .filter(OrderItem.seller_id == current_user.id)
+    
+    if search_query:
+        total_sales = total_sales.filter(
+            or_(
+                OrderItem.product_name.ilike(f'%{search_query}%'),
+                OrderItem.product_code.ilike(f'%{search_query}%')
+            )
+        )
+    if status_filter:
+        total_sales = total_sales.join(Order).filter(Order.status == status_filter)
+    
+    total_sales = total_sales.scalar() or 0
     
     total_items_sold = db.session.query(db.func.sum(OrderItem.quantity))\
-        .filter_by(seller_id=current_user.id)\
-        .scalar() or 0
+        .filter(OrderItem.seller_id == current_user.id)
     
-    return render_template('orders/my_sales.html', 
+    if search_query:
+        total_items_sold = total_items_sold.filter(
+            or_(
+                OrderItem.product_name.ilike(f'%{search_query}%'),
+                OrderItem.product_code.ilike(f'%{search_query}%')
+            )
+        )
+    if status_filter:
+        total_items_sold = total_items_sold.join(Order).filter(Order.status == status_filter)
+    
+    total_items_sold = total_items_sold.scalar() or 0
+    
+    return render_template('my_sales.html', 
                          order_items=order_items, 
                          pagination=pagination,
                          total_sales=total_sales,
@@ -69,7 +123,14 @@ def detail(id):
     if order.buyer_id != current_user.id and not current_user.is_admin():
         abort(403)
     
-    return render_template('orders/detail.html', order=order)
+    # Calcular valores con impuestos
+    tax_amount = float(order.total_amount) * 0.12
+    total_with_tax = float(order.total_amount) * 1.12
+    
+    return render_template('detail.html', 
+                         order=order,
+                         tax_amount=tax_amount,
+                         total_with_tax=total_with_tax)
 
 @orders_bp.route('/create-from-cart', methods=['POST'])
 @login_required
@@ -171,3 +232,57 @@ def cancel(id):
         print(f"Error cancelando orden: {e}")
     
     return redirect(url_for('orders.my_purchases'))
+
+@orders_bp.route('/sales/export')
+@login_required
+@seller_required
+def export_sales():
+    """Exportar ventas a CSV"""
+    import csv
+    from io import StringIO
+    from flask import make_response
+    from datetime import datetime
+    
+    # Obtener todas las ventas del vendedor
+    order_items = OrderItem.query.filter_by(seller_id=current_user.id)\
+        .join(Order)\
+        .order_by(desc(OrderItem.created_at))\
+        .all()
+    
+    # Crear CSV en memoria
+    si = StringIO()
+    writer = csv.writer(si)
+    
+    # Escribir encabezados
+    writer.writerow([
+        'Fecha',
+        'Orden',
+        'Producto',
+        'Código',
+        'Cantidad',
+        'Precio Unitario',
+        'Subtotal',
+        'Estado',
+        'Comprador'
+    ])
+    
+    # Escribir datos
+    for item in order_items:
+        writer.writerow([
+            item.created_at.strftime('%d/%m/%Y %H:%M'),
+            item.order.order_number,
+            item.product_name,
+            item.product_code,
+            item.quantity,
+            f'${float(item.price_at_purchase):.2f}',
+            f'${float(item.subtotal):.2f}',
+            item.order.status,
+            item.order.buyer.username
+        ])
+    
+    # Crear respuesta HTTP
+    output = make_response(si.getvalue())
+    output.headers["Content-Disposition"] = f"attachment; filename=ventas_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    output.headers["Content-type"] = "text/csv"
+    
+    return output

@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+
+{% block title %}Mis Ventas - QowlShop{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-card {
+        border-left: 4px solid #0d6efd;
+        transition: transform 0.2s;
+    }
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .sale-item-card {
+        transition: box-shadow 0.2s;
+    }
+    .sale-item-card:hover {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .status-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+    .product-image-thumb {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+        border-radius: 8px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="display-5">
+                <i class="bi bi-graph-up-arrow text-primary"></i> Mis Ventas
+            </h1>
+            <p class="text-muted">Historial completo de tus productos vendidos</p>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-6 mb-3">
+            <div class="card stats-card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">Total Vendido</h6>
+                            <h2 class="mb-0 text-success">{{ total_sales|currency }}</h2>
+                        </div>
+                        <div class="text-primary" style="font-size: 3rem;">
+                            <i class="bi bi-cash-stack"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="card stats-card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">Unidades Vendidas</h6>
+                            <h2 class="mb-0 text-info">{{ total_items_sold }}</h2>
+                        </div>
+                        <div class="text-primary" style="font-size: 3rem;">
+                            <i class="bi bi-box-seam"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros y búsqueda -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('orders.my_sales') }}">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Buscar por producto</label>
+                        <input type="text" class="form-control" name="search" 
+                               placeholder="Nombre o código del producto" 
+                               value="{{ request.args.get('search', '') }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Estado de orden</label>
+                        <select class="form-select" name="status">
+                            <option value="">Todos</option>
+                            <option value="completed" {% if request.args.get('status') == 'completed' %}selected{% endif %}>Completadas</option>
+                            <option value="pending" {% if request.args.get('status') == 'pending' %}selected{% endif %}>Pendientes</option>
+                            <option value="cancelled" {% if request.args.get('status') == 'cancelled' %}selected{% endif %}>Canceladas</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-search"></i> Buscar
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de ventas -->
+    {% if order_items %}
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-list-check"></i> Productos Vendidos
+                    <span class="badge bg-light text-primary float-end">{{ pagination.total }} ventas</span>
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Producto</th>
+                                <th>Orden</th>
+                                <th>Comprador</th>
+                                <th class="text-center">Cantidad</th>
+                                <th class="text-end">Precio Unit.</th>
+                                <th class="text-end">Subtotal</th>
+                                <th class="text-center">Estado</th>
+                                <th class="text-center">Fecha</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in order_items %}
+                            <tr class="sale-item-card">
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if item.product and item.product.image_url %}
+                                        <img src="{{ item.product.image_url }}" 
+                                             alt="{{ item.product_name }}"
+                                             class="product-image-thumb me-3">
+                                        {% else %}
+                                        <div class="product-image-thumb me-3 bg-light d-flex align-items-center justify-content-center">
+                                            <i class="bi bi-image text-muted"></i>
+                                        </div>
+                                        {% endif %}
+                                        <div>
+                                            <strong>{{ item.product_name }}</strong><br>
+                                            <small class="text-muted">Código: {{ item.product_code }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('orders.detail', id=item.order_id) }}" 
+                                       class="text-decoration-none">
+                                        <i class="bi bi-receipt"></i> {{ item.order.order_number }}
+                                    </a>
+                                </td>
+                                <td>
+                                    <i class="bi bi-person"></i> {{ item.order.buyer.username }}
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-secondary">{{ item.quantity }}</span>
+                                </td>
+                                <td class="text-end">
+                                    {{ item.price_at_purchase|currency }}
+                                </td>
+                                <td class="text-end">
+                                    <strong class="text-success">{{ item.subtotal|currency }}</strong>
+                                </td>
+                                <td class="text-center">
+                                    {% if item.order.status == 'completed' %}
+                                        <span class="badge bg-success status-badge">
+                                            <i class="bi bi-check-circle"></i> Completada
+                                        </span>
+                                    {% elif item.order.status == 'pending' %}
+                                        <span class="badge bg-warning status-badge">
+                                            <i class="bi bi-clock"></i> Pendiente
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-danger status-badge">
+                                            <i class="bi bi-x-circle"></i> Cancelada
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <small>{{ item.created_at|datetime('%d/%m/%Y') }}</small><br>
+                                    <small class="text-muted">{{ item.created_at|datetime('%H:%M') }}</small>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Paginación -->
+        {% if pagination.pages > 1 %}
+        <nav aria-label="Navegación de ventas" class="mt-4">
+            <ul class="pagination justify-content-center">
+                <!-- Primera página -->
+                <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('orders.my_sales', page=1) }}">
+                        <i class="bi bi-chevron-double-left"></i>
+                    </a>
+                </li>
+                
+                <!-- Página anterior -->
+                <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('orders.my_sales', page=pagination.prev_num) if pagination.has_prev else '#' }}">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+
+                <!-- Páginas numeradas -->
+                {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                    {% if page_num %}
+                        <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('orders.my_sales', page=page_num) }}">
+                                {{ page_num }}
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                <!-- Página siguiente -->
+                <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('orders.my_sales', page=pagination.next_num) if pagination.has_next else '#' }}">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+
+                <!-- Última página -->
+                <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('orders.my_sales', page=pagination.pages) }}">
+                        <i class="bi bi-chevron-double-right"></i>
+                    </a>
+                </li>
+            </ul>
+            <p class="text-center text-muted">
+                Mostrando {{ order_items|length }} de {{ pagination.total }} ventas
+            </p>
+        </nav>
+        {% endif %}
+
+    {% else %}
+        <!-- Sin ventas -->
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-inbox text-muted" style="font-size: 4rem;"></i>
+                <h4 class="mt-3">No tienes ventas registradas</h4>
+                <p class="text-muted">Cuando vendas productos, aparecerán aquí.</p>
+                <a href="{{ url_for('products.my_inventory') }}" class="btn btn-primary">
+                    <i class="bi bi-box-seam"></i> Ver mi inventario
+                </a>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Botón de exportar (opcional) -->
+    {% if order_items %}
+    <div class="text-center mt-4">
+        <a href="#" class="btn btn-outline-primary">
+            <i class="bi bi-download"></i> Exportar a Excel
+        </a>
+        <a href="#" class="btn btn-outline-secondary">
+            <i class="bi bi-printer"></i> Imprimir reporte
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

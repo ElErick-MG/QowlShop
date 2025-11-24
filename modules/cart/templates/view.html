@@ -1,0 +1,357 @@
+{% extends "base.html" %}
+
+{% block title %}Mi Carrito - QowlShop{% endblock %}
+
+{% block extra_css %}
+<style>
+    .cart-item-card {
+        transition: all 0.3s ease;
+        border-left: 4px solid transparent;
+    }
+    .cart-item-card:hover {
+        border-left-color: #0d6efd;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        transform: translateX(5px);
+    }
+    .product-image {
+        width: 120px;
+        height: 120px;
+        object-fit: cover;
+        border-radius: 10px;
+    }
+    .quantity-control {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .quantity-btn {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid #0d6efd;
+        background: white;
+        color: #0d6efd;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .quantity-btn:hover {
+        background: #0d6efd;
+        color: white;
+    }
+    .quantity-input {
+        width: 60px;
+        text-align: center;
+        font-weight: bold;
+        border: 2px solid #dee2e6;
+        border-radius: 8px;
+    }
+    .summary-card {
+        position: sticky;
+        top: 20px;
+        border: 2px solid #0d6efd;
+    }
+    .empty-cart-icon {
+        font-size: 6rem;
+        color: #dee2e6;
+    }
+    .btn-checkout {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        padding: 15px;
+        font-size: 1.1rem;
+        transition: transform 0.2s;
+    }
+    .btn-checkout:hover {
+        transform: scale(1.05);
+    }
+    .stock-badge {
+        font-size: 0.75rem;
+    }
+    .remove-btn {
+        transition: all 0.2s;
+    }
+    .remove-btn:hover {
+        transform: scale(1.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="display-5">
+                <i class="bi bi-cart3 text-primary"></i> Mi Carrito
+            </h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Inicio</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('products.list_products') }}">Productos</a></li>
+                    <li class="breadcrumb-item active">Carrito</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    {% if cart and cart.get_item_count() > 0 %}
+    <div class="row">
+        <!-- Items del carrito -->
+        <div class="col-lg-8 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-bag-check"></i> Productos en tu carrito
+                        <span class="badge bg-light text-primary float-end">{{ cart.get_item_count() }} items</span>
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% for item in cart.items %}
+                    <div class="cart-item-card p-3 border-bottom">
+                        <div class="row align-items-center">
+                            <!-- Imagen del producto -->
+                            <div class="col-md-2 text-center mb-3 mb-md-0">
+                                {% if item.product.image_url %}
+                                <img src="{{ item.product.image_url }}" 
+                                     alt="{{ item.product.name }}"
+                                     class="product-image">
+                                {% else %}
+                                <div class="product-image bg-light d-flex align-items-center justify-content-center">
+                                    <i class="bi bi-image text-muted" style="font-size: 3rem;"></i>
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Información del producto -->
+                            <div class="col-md-4 mb-3 mb-md-0">
+                                <h5 class="mb-1">
+                                    <a href="{{ url_for('products.detail', id=item.product.id) }}" 
+                                       class="text-decoration-none text-dark">
+                                        {{ item.product.name }}
+                                    </a>
+                                </h5>
+                                <p class="text-muted mb-1">
+                                    <small>Código: {{ item.product.code }}</small>
+                                </p>
+                                <p class="mb-1">
+                                    <strong class="text-primary">{{ item.product.price|currency }}</strong>
+                                    <small class="text-muted">c/u</small>
+                                </p>
+                                {% if item.product.stock < 10 %}
+                                <span class="badge bg-warning stock-badge">
+                                    <i class="bi bi-exclamation-triangle"></i> Solo quedan {{ item.product.stock }}
+                                </span>
+                                {% else %}
+                                <span class="badge bg-success stock-badge">
+                                    <i class="bi bi-check-circle"></i> En stock
+                                </span>
+                                {% endif %}
+                            </div>
+
+                            <!-- Control de cantidad -->
+                            <div class="col-md-3 mb-3 mb-md-0">
+                                <form method="POST" 
+                                      action="{{ url_for('cart.update_item', item_id=item.id) }}" 
+                                      class="quantity-control justify-content-center"
+                                      id="form-{{ item.id }}">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    
+                                    <!-- Botón decrementar -->
+                                    <button type="button" class="quantity-btn" 
+                                            onclick="changeQuantity({{ item.id }}, -1, {{ item.product.stock }})">
+                                        <i class="bi bi-dash"></i>
+                                    </button>
+                                    
+                                    <!-- Input de cantidad -->
+                                    <input type="number" 
+                                           name="quantity" 
+                                           id="quantity-{{ item.id }}"
+                                           value="{{ item.quantity }}" 
+                                           min="1" 
+                                           max="{{ item.product.stock }}"
+                                           class="form-control quantity-input"
+                                           onchange="submitQuantityForm({{ item.id }})">
+                                    
+                                    <!-- Botón incrementar -->
+                                    <button type="button" class="quantity-btn"
+                                            onclick="changeQuantity({{ item.id }}, 1, {{ item.product.stock }})">
+                                        <i class="bi bi-plus"></i>
+                                    </button>
+                                </form>
+                            </div>
+
+                            <!-- Subtotal y acciones -->
+                            <div class="col-md-3 text-center text-md-end">
+                                <h5 class="mb-3 text-success">
+                                    {{ item.get_subtotal()|currency }}
+                                </h5>
+                                <form method="POST" 
+                                      action="{{ url_for('cart.remove_item', item_id=item.id) }}"
+                                      style="display: inline;"
+                                      onsubmit="return confirm('¿Eliminar este producto del carrito?');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm remove-btn">
+                                        <i class="bi bi-trash"></i> Eliminar
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <a href="{{ url_for('products.list_products') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-arrow-left"></i> Seguir comprando
+                        </a>
+                        <form method="POST" 
+                              action="{{ url_for('cart.clear_cart') }}"
+                              style="display: inline;"
+                              onsubmit="return confirm('¿Estás seguro de vaciar todo el carrito?');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-outline-danger">
+                                <i class="bi bi-trash3"></i> Vaciar carrito
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resumen del pedido -->
+        <div class="col-lg-4">
+            <div class="card summary-card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-calculator"></i> Resumen del Pedido
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Productos ({{ cart.get_item_count() }})</span>
+                            <span>{{ cart.get_total()|currency }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Envío</span>
+                            <span class="badge bg-success">GRATIS</span>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between mb-3">
+                            <strong class="h5">Total:</strong>
+                            <strong class="h4 text-primary">{{ cart.get_total()|currency }}</strong>
+                        </div>
+                    </div>
+
+                    <!-- Botón de checkout -->
+                    <form method="POST" action="{{ url_for('orders.create_from_cart') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-checkout btn-primary w-100 mb-3">
+                            <i class="bi bi-credit-card"></i> Proceder al Pago
+                        </button>
+                    </form>
+
+                    <!-- Información adicional -->
+                    <div class="alert alert-info mb-0">
+                        <small>
+                            <i class="bi bi-shield-check"></i> Compra 100% segura<br>
+                            <i class="bi bi-truck"></i> Envío gratis en todos los pedidos<br>
+                            <i class="bi bi-arrow-counterclockwise"></i> Devoluciones fáciles
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Métodos de pago aceptados -->
+            <div class="card mt-3">
+                <div class="card-body text-center">
+                    <p class="text-muted mb-2"><small>Métodos de pago:</small></p>
+                    <div class="d-flex justify-content-center gap-2">
+                        <i class="bi bi-credit-card-2-front text-primary" style="font-size: 2rem;"></i>
+                        <i class="bi bi-paypal text-primary" style="font-size: 2rem;"></i>
+                        <i class="bi bi-wallet2 text-primary" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- Carrito vacío -->
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card text-center py-5">
+                <div class="card-body">
+                    <i class="bi bi-cart-x empty-cart-icon"></i>
+                    <h2 class="mt-4 mb-3">Tu carrito está vacío</h2>
+                    <p class="text-muted mb-4">
+                        ¡Agrega productos para comenzar tu compra!
+                    </p>
+                    <a href="{{ url_for('products.list_products') }}" class="btn btn-primary btn-lg">
+                        <i class="bi bi-shop"></i> Explorar Productos
+                    </a>
+                </div>
+            </div>
+
+            <!-- Productos sugeridos -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-stars"></i> También te podría interesar
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted text-center">
+                        Descubre nuestros productos más populares
+                    </p>
+                    <div class="text-center">
+                        <a href="{{ url_for('products.list_products') }}" class="btn btn-outline-primary">
+                            Ver todos los productos
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+// Función para cambiar cantidad con botones
+function changeQuantity(itemId, delta, maxStock) {
+    const input = document.getElementById('quantity-' + itemId);
+    let currentValue = parseInt(input.value);
+    let newValue = currentValue + delta;
+    
+    // Validar límites
+    if (newValue < 1) newValue = 1;
+    if (newValue > maxStock) {
+        alert('Stock máximo disponible: ' + maxStock);
+        newValue = maxStock;
+    }
+    
+    // Actualizar valor y enviar formulario
+    input.value = newValue;
+    submitQuantityForm(itemId);
+}
+
+// Función para enviar formulario de cantidad
+function submitQuantityForm(itemId) {
+    const form = document.getElementById('form-' + itemId);
+    form.submit();
+}
+
+// Confirmación antes de salir si hay items en el carrito
+window.addEventListener('beforeunload', function (e) {
+    const itemCount = {{ cart.get_item_count() if cart else 0 }};
+    if (itemCount > 0) {
+        // Algunos navegadores mostrarán un mensaje genérico
+        e.preventDefault();
+        e.returnValue = '';
+    }
+});
+</script>
+{% endblock %}

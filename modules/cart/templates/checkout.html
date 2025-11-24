@@ -1,0 +1,410 @@
+{% extends "base.html" %}
+
+{% block title %}Checkout - QowlShop{% endblock %}
+
+{% block extra_css %}
+<style>
+    .checkout-steps {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 2rem;
+        position: relative;
+    }
+    .checkout-step {
+        flex: 1;
+        text-align: center;
+        position: relative;
+        z-index: 1;
+    }
+    .step-number {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: #dee2e6;
+        color: #6c757d;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 1.2rem;
+        margin-bottom: 10px;
+        transition: all 0.3s;
+    }
+    .checkout-step.active .step-number {
+        background: #0d6efd;
+        color: white;
+        transform: scale(1.2);
+    }
+    .checkout-step.completed .step-number {
+        background: #198754;
+        color: white;
+    }
+    .step-line {
+        position: absolute;
+        top: 25px;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: #dee2e6;
+        z-index: 0;
+    }
+    .product-summary-item {
+        padding: 15px;
+        border-bottom: 1px solid #dee2e6;
+        transition: background 0.2s;
+    }
+    .product-summary-item:hover {
+        background: #f8f9fa;
+    }
+    .payment-method {
+        border: 2px solid #dee2e6;
+        border-radius: 10px;
+        padding: 20px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    .payment-method:hover {
+        border-color: #0d6efd;
+        box-shadow: 0 2px 8px rgba(13, 110, 253, 0.2);
+    }
+    .payment-method.selected {
+        border-color: #0d6efd;
+        background: #e7f1ff;
+    }
+    .payment-icon {
+        font-size: 3rem;
+        color: #0d6efd;
+    }
+    .form-section {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="display-5">
+                <i class="bi bi-bag-check text-primary"></i> Finalizar Compra
+            </h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Inicio</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('cart.view_cart') }}">Carrito</a></li>
+                    <li class="breadcrumb-item active">Checkout</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Pasos del checkout -->
+    <div class="checkout-steps mb-5">
+        <div class="step-line"></div>
+        <div class="checkout-step completed">
+            <div class="step-number">
+                <i class="bi bi-check-lg"></i>
+            </div>
+            <div>Carrito</div>
+        </div>
+        <div class="checkout-step active">
+            <div class="step-number">2</div>
+            <div>Información</div>
+        </div>
+        <div class="checkout-step">
+            <div class="step-number">3</div>
+            <div>Pago</div>
+        </div>
+        <div class="checkout-step">
+            <div class="step-number">4</div>
+            <div>Confirmación</div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Formulario de checkout -->
+        <div class="col-lg-7 mb-4">
+            <form method="POST" action="{{ url_for('orders.create_from_cart') }}" id="checkoutForm">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                
+                <!-- Información de contacto -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-person-circle"></i> Información de Contacto
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Nombre completo *</label>
+                                <input type="text" class="form-control" 
+                                       value="{{ current_user.username }}" 
+                                       readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Email *</label>
+                                <input type="email" class="form-control" 
+                                       value="{{ current_user.email }}" 
+                                       readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Teléfono *</label>
+                                <input type="tel" class="form-control" 
+                                       name="phone" 
+                                       placeholder="+593 99 999 9999"
+                                       required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dirección de envío -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-geo-alt"></i> Dirección de Envío
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label">Dirección completa *</label>
+                                <input type="text" class="form-control" 
+                                       name="address" 
+                                       placeholder="Calle, número, referencias"
+                                       required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Ciudad *</label>
+                                <input type="text" class="form-control" 
+                                       name="city" 
+                                       placeholder="Quito"
+                                       required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Provincia *</label>
+                                <select class="form-select" name="province" required>
+                                    <option value="">Seleccionar...</option>
+                                    <option value="Pichincha" selected>Pichincha</option>
+                                    <option value="Guayas">Guayas</option>
+                                    <option value="Azuay">Azuay</option>
+                                    <option value="Manabí">Manabí</option>
+                                    <option value="El Oro">El Oro</option>
+                                    <option value="Tungurahua">Tungurahua</option>
+                                    <option value="Los Ríos">Los Ríos</option>
+                                    <option value="Esmeraldas">Esmeraldas</option>
+                                    <option value="Chimborazo">Chimborazo</option>
+                                    <option value="Cotopaxi">Cotopaxi</option>
+                                    <option value="Imbabura">Imbabura</option>
+                                    <option value="Santo Domingo">Santo Domingo de los Tsáchilas</option>
+                                    <option value="Santa Elena">Santa Elena</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Código postal</label>
+                                <input type="text" class="form-control" 
+                                       name="postal_code" 
+                                       placeholder="170150">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Método de pago -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-credit-card"></i> Método de Pago
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="payment-method text-center" onclick="selectPayment('credit_card')">
+                                    <input type="radio" name="payment_method" value="credit_card" 
+                                           id="credit_card" class="d-none" checked>
+                                    <i class="bi bi-credit-card-2-front payment-icon"></i>
+                                    <h6 class="mt-2">Tarjeta de Crédito</h6>
+                                    <small class="text-muted">Visa, Mastercard, Amex</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="payment-method text-center" onclick="selectPayment('paypal')">
+                                    <input type="radio" name="payment_method" value="paypal" 
+                                           id="paypal" class="d-none">
+                                    <i class="bi bi-paypal payment-icon"></i>
+                                    <h6 class="mt-2">PayPal</h6>
+                                    <small class="text-muted">Pago seguro</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="payment-method text-center" onclick="selectPayment('transfer')">
+                                    <input type="radio" name="payment_method" value="transfer" 
+                                           id="transfer" class="d-none">
+                                    <i class="bi bi-bank payment-icon"></i>
+                                    <h6 class="mt-2">Transferencia</h6>
+                                    <small class="text-muted">Banco local</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="payment-method text-center" onclick="selectPayment('cash')">
+                                    <input type="radio" name="payment_method" value="cash" 
+                                           id="cash" class="d-none">
+                                    <i class="bi bi-cash-coin payment-icon"></i>
+                                    <h6 class="mt-2">Contra Entrega</h6>
+                                    <small class="text-muted">Efectivo</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notas adicionales -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="bi bi-chat-left-text"></i> Notas del pedido (opcional)
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <textarea class="form-control" name="notes" rows="3" 
+                                  placeholder="Instrucciones especiales de entrega, referencias adicionales..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Términos y condiciones -->
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="terms" required>
+                    <label class="form-check-label" for="terms">
+                        Acepto los <a href="#" target="_blank">términos y condiciones</a> y la 
+                        <a href="#" target="_blank">política de privacidad</a> *
+                    </label>
+                </div>
+
+                <!-- Botones de acción -->
+                <div class="d-flex justify-content-between">
+                    <a href="{{ url_for('cart.view_cart') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Volver al carrito
+                    </a>
+                    <button type="submit" class="btn btn-success btn-lg">
+                        <i class="bi bi-check-circle"></i> Confirmar Pedido
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Resumen del pedido -->
+        <div class="col-lg-5">
+            <div class="card sticky-top" style="top: 20px;">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-receipt"></i> Resumen del Pedido
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <!-- Lista de productos -->
+                    <div style="max-height: 400px; overflow-y: auto;">
+                        {% for item in cart.items %}
+                        <div class="product-summary-item">
+                            <div class="d-flex align-items-center">
+                                {% if item.product.image_url %}
+                                <img src="{{ item.product.image_url }}" 
+                                     alt="{{ item.product.name }}"
+                                     style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;"
+                                     class="me-3">
+                                {% else %}
+                                <div style="width: 60px; height: 60px; border-radius: 8px;"
+                                     class="bg-light d-flex align-items-center justify-content-center me-3">
+                                    <i class="bi bi-image text-muted"></i>
+                                </div>
+                                {% endif %}
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">{{ item.product.name }}</h6>
+                                    <small class="text-muted">Cantidad: {{ item.quantity }}</small>
+                                </div>
+                                <div class="text-end">
+                                    <strong>{{ item.get_subtotal()|currency }}</strong>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Totales -->
+                    <div class="p-3 border-top">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Subtotal:</span>
+                            <span>{{ cart.get_total()|currency }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Envío:</span>
+                            <span class="badge bg-success">GRATIS</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">IVA (12%):</span>
+                            <span>{{ (cart.get_total() * 0.12)|currency }}</span>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between">
+                            <strong class="h5">Total a pagar:</strong>
+                            <strong class="h4 text-success">{{ (cart.get_total() * 1.12)|currency }}</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Beneficios -->
+                <div class="card-footer bg-light">
+                    <div class="small">
+                        <div class="mb-2">
+                            <i class="bi bi-shield-check text-success"></i> 
+                            <strong>Compra segura</strong>
+                        </div>
+                        <div class="mb-2">
+                            <i class="bi bi-truck text-primary"></i> 
+                            <strong>Envío gratis</strong>
+                        </div>
+                        <div>
+                            <i class="bi bi-arrow-counterclockwise text-info"></i> 
+                            <strong>30 días para devoluciones</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Función para seleccionar método de pago
+function selectPayment(method) {
+    // Remover selección anterior
+    document.querySelectorAll('.payment-method').forEach(el => {
+        el.classList.remove('selected');
+    });
+    
+    // Marcar el seleccionado
+    document.getElementById(method).checked = true;
+    document.getElementById(method).closest('.payment-method').classList.add('selected');
+}
+
+// Inicializar con tarjeta de crédito seleccionada
+document.addEventListener('DOMContentLoaded', function() {
+    selectPayment('credit_card');
+});
+
+// Validación del formulario
+document.getElementById('checkoutForm').addEventListener('submit', function(e) {
+    const terms = document.getElementById('terms');
+    if (!terms.checked) {
+        e.preventDefault();
+        alert('Debes aceptar los términos y condiciones para continuar.');
+        return false;
+    }
+});
+</script>
+{% endblock %}

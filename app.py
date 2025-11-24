@@ -29,14 +29,12 @@ def create_app(config_name='development'):
     from modules.orders import orders_bp
     from modules.cart import cart_bp
     from modules.main import main_bp
-    from modules.historial_compras import historial_bp
     
     app.register_blueprint(auth_bp)
     app.register_blueprint(products_bp)
     app.register_blueprint(orders_bp)
     app.register_blueprint(cart_bp)
     app.register_blueprint(main_bp)
-    app.register_blueprint(historial_bp)
     
     # Registrar filtros de plantillas personalizados
     register_template_filters(app)

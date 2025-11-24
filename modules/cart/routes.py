@@ -21,7 +21,7 @@ def view_cart():
         db.session.add(cart)
         db.session.commit()
     
-    return render_template('cart/view.html', cart=cart)
+    return render_template('view.html', cart=cart)
 
 @cart_bp.route('/add/<int:product_id>', methods=['POST'])
 @login_required
@@ -159,4 +159,4 @@ def checkout():
         flash('Tu carrito está vacío.', 'warning')
         return redirect(url_for('products.list_products'))
     
-    return render_template('cart/checkout.html', cart=cart)
+    return render_template('checkout.html', cart=cart)
