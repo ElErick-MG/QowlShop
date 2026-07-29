@@ -99,7 +99,7 @@ QowlShop implementa un modelo relacional robusto para soportar la dinámica mult
 erDiagram
     USER ||--o{ PRODUCT : "vende (seller_id)"
     USER ||--o{ ORDER : "compra (buyer_id)"
-    USER ||--|| CART : "posee (user_id)"
+    USER ||--|| CART : "posee (user_id único)"
     CATEGORY ||--o{ PRODUCT : "clasifica"
     ORDER ||--|{ ORDER_ITEM : "contiene"
     PRODUCT ||--o{ ORDER_ITEM : "registra"
@@ -141,7 +141,7 @@ erDiagram
     }
     CART {
         int id PK
-        int user_id FK UK
+        int user_id FK
     }
     CART_ITEM {
         int id PK
@@ -149,6 +149,7 @@ erDiagram
         int product_id FK
         int quantity
     }
+
 ```
 
 > 📄 _Para ver las definiciones DDL en SQL, índices de optimización y consultas frecuentes, revisa [qowlshop_sql_diagram.md](file:///d:/levantamientoProyectos/QowlShop/docs/qowlshop_sql_diagram.md)._
