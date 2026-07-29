@@ -39,18 +39,4 @@ def admin_required(f):
             return redirect(url_for('main.index'))
         
         return f(*args, **kwargs)
-    return decorated_function
-
-def buyer_required(f):
-    """
-    Decorador que simplemente requiere autenticación (cualquier usuario puede comprar).
-    Es equivalente a @login_required pero más semántico
-    """
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if not current_user.is_authenticated:
-            flash('Por favor inicia sesión para realizar una compra.', 'info')
-            return redirect(url_for('auth.login'))
-        
-        return f(*args, **kwargs)
-    return decorated_function
+    return decorated_function

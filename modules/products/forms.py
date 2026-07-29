@@ -37,8 +37,8 @@ class ProductForm(FlaskForm):
     ])
     submit = SubmitField('Publicar Producto')
     
-    def __init__(self, product=None, *args, **kwargs):
-        super(ProductForm, self).__init__(*args, **kwargs)
+    def __init__(self, formdata=None, obj=None, prefix='', data=None, meta=None, product=None, **kwargs):
+        super(ProductForm, self).__init__(formdata=formdata, obj=obj, prefix=prefix, data=data, meta=meta, **kwargs)
         self.product = product
         
         # Cargar categorías dinámicamente
@@ -78,8 +78,8 @@ class SearchProductForm(FlaskForm):
     ])
     submit = SubmitField('Buscar')
     
-    def __init__(self, *args, **kwargs):
-        super(SearchProductForm, self).__init__(*args, **kwargs)
+    def __init__(self, formdata=None, obj=None, prefix='', data=None, meta=None, **kwargs):
+        super(SearchProductForm, self).__init__(formdata=formdata, obj=obj, prefix=prefix, data=data, meta=meta, **kwargs)
         
         # Cargar categorías dinámicamente
         from modules.products.models import Category

@@ -1,7 +1,17 @@
 """
 Script para crear productos de prueba en la base de datos de QowlShop.
-Ejecutar con: python create_test_products.py
+Ejecutar con: python scripts/create_test_products.py
 """
+
+import os
+import sys
+
+# Configurar codificación UTF-8 para la consola
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+
+# Asegurar que el directorio raíz del proyecto esté en sys.path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from app import create_app
 from extensions import db

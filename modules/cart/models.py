@@ -8,6 +8,9 @@ from sqlalchemy import CheckConstraint
 class Cart(db.Model):
     __tablename__ = 'carts'
     
+    def __init__(self, **kwargs):
+        super(Cart, self).__init__(**kwargs)
+
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), unique=True, nullable=False)
     
@@ -67,6 +70,9 @@ class Cart(db.Model):
 class CartItem(db.Model):
     __tablename__ = 'cart_items'
     
+    def __init__(self, **kwargs):
+        super(CartItem, self).__init__(**kwargs)
+
     id = db.Column(db.Integer, primary_key=True)
     
     # Foreign Keys

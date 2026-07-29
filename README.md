@@ -1,518 +1,315 @@
+<div align="center">
+
 # 🛒 QowlShop
 
-Sistema de comercio electrónico con autenticación, gestión de productos, carrito de compras y sistema de órdenes.
+### _Plataforma de Comercio Electrónico Multi-Vendedor de Alto Rendimiento_
 
-## 📁 Estructura del Proyecto
+![Python Version](https://img.shields.io/badge/python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Flask](https://img.shields.io/badge/flask-3.0.0-000000?style=for-the-badge&logo=flask&logoColor=white)
+![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-3.1.1-red?style=for-the-badge&logo=sqlalchemy&logoColor=white)
+![Bootstrap](https://img.shields.io/badge/Bootstrap-5.3-7952B3?style=for-the-badge&logo=bootstrap&logoColor=white)
+![SQLite](https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white)
+![License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)
 
-```
-qowlshop_app/
+<p align="center">
+  <b>Un sistema e-commerce completo, modular y escalable construido con Flask y Python.</b><br/>
+  Diseñado bajo el patrón de fábrica (Application Factory Pattern) con arquitectura basada en Blueprints, control de acceso basado en roles (RBAC) y gestión automatizada de inventario.
+</p>
+
+[📌 Características](#-características-principales) •
+[🏗️ Arquitectura](#-arquitectura-del-sistema) •
+[⚡ Instalación](#-guía-de-instalación-rápida) •
+[🛣️ Rutas](#️-referencia-de-rutas-y-endpoints) •
+[🗄️ Base de Datos](#-esquema-de-base-de-datos)
+
+---
+
+</div>
+
+## 📖 Descripción General
+
+**QowlShop** es una solución integral de e-commerce multi-vendedor desarrollada con **Flask 3.0** y **Python**. El sistema permite a los usuarios registrarse como compradores o vendedores, administrar inventarios en tiempo real, procesar órdenes con control automático de stock, gestionar carritos de compra persistentes y administrar la plataforma mediante un panel de control con soporte RBAC.
+
+### 🌟 Puntos Destacados del Proyecto
+
+- **Arquitectura Modular (Blueprints):** Código desacoplado en módulos independientes (`auth`, `products`, `cart`, `orders`, `main`).
+- **Control de Acceso por Roles (RBAC):** Permisos diferenciados para Compradores, Vendedores y Administradores.
+- **Transacciones e Inventario Atómico:** Descuento y restauración de stock automatizados durante la compra o cancelación de órdenes.
+- **Interfaz Moderna y Responsiva:** Maquetación fluida utilizando Bootstrap 5 y Jinja2 templates.
+- **Seguridad Integrada:** Hash seguro de contraseñas con Werkzeug, protección contra ataques CSRF con Flask-WTF y sanitización de archivos subidos.
+
+---
+
+## 📌 Características Principales
+
+| Módulo                      | Funcionalidades Destacadas                                                                                                                                                                                                                                                                   |
+| :-------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 🔐 **Autenticación & RBAC** | • Registro con opción de perfil de Vendedor.<br/>• Login/Logout seguro gestionado por `Flask-Login`.<br/>• Encriptación PBKDF2/SHA256 para contraseñas.<br/>• Decoradores personalizados `@seller_required` y `@admin_required`.                                                             |
+| 📦 **Catálogo & Productos** | • CRUD de productos (Creación, Lectura, Edición, Eliminación).<br/>• Búsqueda por nombre y código SKU único.<br/>• Filtros dinámicos por categorías relacionales y rango de precios.<br/>• Carga y validación de imágenes representativas (`static/uploads/products`).                       |
+| 🛒 **Carrito de Compras**   | • Carrito de compras individual y dinámico por usuario.<br/>• Cálculo automático de subtotales y totales globales.<br/>• Validación en tiempo real de disponibilidad de stock antes del Checkout.<br/>• Contador de carrito inyectado globalmente en todas las vistas (`context_processor`). |
+| 📋 **Órdenes & Checkout**   | • Generación de número de orden único en cada transacción.<br/>• Deducción automática de stock de los productos comprados.<br/>• Historial detallado de compras para el cliente y de ventas para cada vendedor.<br/>• Cancelación de órdenes pendientes con restitución inmediata de stock.  |
+| 🛡️ **Administración**       | • Dashboard con métricas clave del sistema.<br/>• Monitoreo global de usuarios, inventarios y órdenes.                                                                                                                                                                                       |
+
+---
+
+## 🏗️ Arquitectura del Sistema
+
+El proyecto sigue una estructura limpia (**Clean Architecture / Modular Pattern**), dividida en Blueprints para maximizar la mantenibilidad y escalabilidad.
+
+### 📁 Estructura del Proyecto
+
+```text
+QowlShop/
+├── app.py                          # Factory de la aplicación (create_app)
+├── config.py                       # Configuración por entornos (Dev, Test, Prod)
+├── extensions.py                   # Inicialización de SQLAlchemy, LoginManager, CSRF
+├── run.py                          # Punto de entrada principal
+├── requirements.txt                # Dependencias del proyecto
 │
-├── app.py                          # Factory principal de la aplicación
-├── config.py                       # Configuraciones centralizadas
-├── extensions.py                   # Extensiones compartidas (db, login_manager, csrf)
-├── run.py                          # Punto de entrada
-├── requirements.txt                # Dependencias
+├── scripts/                        # Scripts auxiliares y de sembrado
+│   └── create_test_products.py     # Script para cargar productos de prueba
 │
-├── modules/                        # Módulos de la aplicación
-│   ├── auth/                       # Autenticación y usuarios
-│   │   ├── __init__.py
-│   │   ├── models.py               # User model
-│   │   ├── routes.py               # Login, register, logout
-│   │   ├── forms.py                # LoginForm, RegisterForm
-│   │   ├── decorators.py           # @seller_required, @admin_required
-│   │   └── templates/          
-│   │       └── auth/
-│   │
-│   ├── products/                   # Gestión de productos
-│   │   ├── __init__.py
-│   │   ├── models.py               # Product, Category models
-│   │   ├── routes.py               # CRUD productos, búsqueda
-│   │   ├── forms.py                # ProductForm, SearchForm
-│   │   ├── utils.py                # Manejo de imágenes
-│   │   └── templates/
-│   │       └── products/
-│   │
-│   ├── orders/                     # Gestión de órdenes
-│   │   ├── __init__.py
-│   │   ├── models.py               # Order, OrderItem models
-│   │   ├── routes.py               # Historial compras/ventas
-│   │   └── templates/
-│   │       └── orders/
-│   │
-│   ├── cart/                       # Carrito de compras
-│   │   ├── __init__.py
-│   │   ├── models.py               # Cart, CartItem models
-│   │   ├── routes.py               # Agregar/quitar productos
-│   │   └── templates/
-│   │       └── cart/
-│   │
-│   └── main/                       # Páginas principales
-│       ├── __init__.py
-│       ├── routes.py               # Index, dashboard, admin
-│       └── templates/
-│           └── main/
+├── docs/                           # Documentación del proyecto
+│   └── qowlshop_sql_diagram.md     # Documentación y consultas SQL optimizadas
 │
-├── static/                         # Archivos estáticos
-│   ├── css/
-│   ├── js/
-│   ├── images/
-│   └── uploads/                    # Imágenes de productos
-│       └── products/
+├── modules/                        # Módulos encapsulados (Blueprints)
+│   ├── auth/                       # Modelos, rutas, formularios y decoradores de Auth
+│   ├── products/                   # Gestión de productos, categorías y cargas
+│   ├── cart/                       # Lógica de carrito de compras y persistencia
+│   ├── orders/                     # Procesamiento de órdenes y transacciones
+│   └── main/                       # Rutas principales, dashboard y panel admin
 │
-└── templates/                      # Templates base
-    ├── base.html
-    └── errors/
+├── static/                         # Recursos estáticos
+│   ├── css/                        # Hojas de estilo personalizadas
+│   ├── js/                         # Scripts del cliente
+│   └── uploads/products/           # Almacenamiento local de imágenes de productos
+│
+└── templates/                      # Plantillas base Jinja2
+    ├── base.html                   # Layout base de la aplicación
+    └── errors/                     # Páginas de error 404, 500
 ```
 
-## 🗄️ Modelos y Relaciones
+---
 
-### Diagrama ER
+## 🗄️ Esquema de Base de Datos
 
+QowlShop implementa un modelo relacional robusto para soportar la dinámica multi-vendedor:
+
+```mermaid
+erDiagram
+    USER ||--o{ PRODUCT : "vende (seller_id)"
+    USER ||--o{ ORDER : "compra (buyer_id)"
+    USER ||--|| CART : "posee (user_id)"
+    CATEGORY ||--o{ PRODUCT : "clasifica"
+    ORDER ||--|{ ORDER_ITEM : "contiene"
+    PRODUCT ||--o{ ORDER_ITEM : "registra"
+    CART ||--|{ CART_ITEM : "contiene"
+    PRODUCT ||--o{ CART_ITEM : "incluye"
+
+    USER {
+        int id PK
+        string username UK
+        string email UK
+        string password_hash
+        string role
+        boolean is_seller
+    }
+    PRODUCT {
+        int id PK
+        string code UK
+        string name
+        decimal price
+        int stock
+        int seller_id FK
+        int category_id FK
+    }
+    ORDER {
+        int id PK
+        string order_number UK
+        int buyer_id FK
+        decimal total_amount
+        string status
+    }
+    ORDER_ITEM {
+        int id PK
+        int order_id FK
+        int product_id FK
+        int seller_id FK
+        int quantity
+        decimal price_at_purchase
+        decimal subtotal
+    }
+    CART {
+        int id PK
+        int user_id FK UK
+    }
+    CART_ITEM {
+        int id PK
+        int cart_id FK
+        int product_id FK
+        int quantity
+    }
 ```
-User (1) ----< (N) Product
-  |                    |
-  | (comprador)        |
-  |                    |
-  +----< Order >------+
-         (N)     (N)
-           \    /
-          OrderItem
 
-User (1) --- (1) Cart (1) ----< (N) CartItem >---- (N) Product
-```
+> 📄 _Para ver las definiciones DDL en SQL, índices de optimización y consultas frecuentes, revisa [qowlshop_sql_diagram.md](file:///d:/levantamientoProyectos/QowlShop/docs/qowlshop_sql_diagram.md)._
 
-### Modelos
+---
 
-1. **User**: Usuarios con roles (comprador/vendedor/admin)
-2. **Product**: Productos con stock e imágenes
-3. **Category**: Categorías de productos
-4. **Order**: Órdenes de compra
-5. **OrderItem**: Items individuales de cada orden
-6. **Cart**: Carrito de compras por usuario
-7. **CartItem**: Productos en el carrito
+## ⚡ Guía de Instalación Rápida
 
-## ✨ Características Implementadas
+Sigue estos pasos para ejecutar **QowlShop** localmente en tu entorno de desarrollo.
 
-### 🔐 Autenticación
-- ✅ Registro de usuarios (con opción de ser vendedor)
-- ✅ Login/Logout con sesiones seguras
-- ✅ Contraseñas hasheadas
-- ✅ Validaciones de email y contraseña robustas
-- ✅ Sistema de roles: comprador(usuario por defecto), vendedor, administrador
+### 1. Requisitos Previos
 
-### 📦 Productos
-- ✅ Publicar productos (solo vendedores)
-- ✅ Editar/eliminar productos propios
-- ✅ Búsqueda por nombre y código
-- ✅ Filtros por precio y categoría
-- ✅ Gestión de inventario/stock
-- ✅ Carga de imágenes
-- ✅ Categorías de productos
+- **Python 3.10+** instalado en tu sistema.
+- **Git** para clonar el repositorio.
 
-### 🛒 Carrito de Compras
-- ✅ Agregar productos al carrito
-- ✅ Actualizar cantidades
-- ✅ Eliminar productos
-- ✅ Calcular totales automáticamente
-- ✅ Validación de stock disponible
-
-### 📋 Órdenes
-- ✅ Crear órdenes desde el carrito
-- ✅ Historial de compras
-- ✅ Historial de ventas (vendedores)
-- ✅ Números de orden únicos
-- ✅ Reducción automática de stock
-- ✅ Cancelación de órdenes pendientes
-
-### 👥 Roles y Permisos
-- ✅ **Usuario normal**: Puede comprar productos
-- ✅ **Vendedor**: Puede vender + comprar
-- ✅ **Admin**: Acceso completo al sistema
-
-## 🚀 Instalación
-
-### 1. Clonar/Crear el proyecto
+### 2. Clonar el Repositorio
 
 ```bash
-mkdir qowlshop_app
-cd qowlshop_app
+git clone https://github.com/tu-usuario/QowlShop.git
+cd QowlShop
 ```
 
-### 2. Crear entorno virtual
+### 3. Crear y Activar el Entorno Virtual
 
-```bash
-# Windows
-python -m venv venv
-venv\Scripts\activate
+- **En Windows (PowerShell / CMD):**
 
-# Linux/Mac
-python3 -m venv venv
-source venv/bin/activate
-```
+  ```powershell
+  python -m venv venv
+  .\venv\Scripts\activate
+  ```
 
-### 3. Instalar dependencias
+- **En Linux / macOS:**
+  ```bash
+  python3 -m venv venv
+  source venv/bin/activate
+  ```
+
+### 4. Instalar Dependencias
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. Crear carpetas necesarias
+### 5. Configurar Variables de Entorno (Opcional)
 
-```bash
-mkdir -p static/uploads/products
-mkdir -p static/images
-mkdir -p static/css
-mkdir -p static/js
+Crea un archivo `.env` en la raíz del proyecto para personalizar la clave secreta y base de datos:
+
+```env
+FLASK_ENV=development
+SECRET_KEY=tu-clave-super-secreta-y-segura
+DATABASE_URL=sqlite:///qowlshop.db
 ```
 
-### 5. Ejecutar la aplicación
+### 6. Poblar la Base de Datos con Datos de Prueba
+
+Al iniciar la aplicación por primera vez se creará la base de datos SQLite y el usuario Administrador. Puedes cargar productos de demostración ejecutando:
+
+```bash
+python scripts/create_test_products.py
+```
+
+### 7. Ejecutar la Aplicación
 
 ```bash
 python run.py
 ```
 
-La aplicación estará en: `http://127.0.0.1:5000/`
+Accede desde tu navegador web a: **`http://127.0.0.1:5000`**
+
+---
 
 ## 👤 Credenciales Iniciales
 
-Se crea automáticamente un usuario administrador:
+El sistema genera automáticamente el usuario Administrador por defecto al inicializar la base de datos:
 
-- **Email:** admin@qowlshop.com
-- **Contraseña:** Admin123!
-- **Rol:** Administrador + Vendedor
-
-## 📝 Rutas Disponibles
-
-### Públicas
-- `/` - Página de inicio con productos destacados
-- `/products` - Catálogo de productos (con búsqueda y filtros)
-- `/products/<id>` - Detalle de producto
-- `/auth/login` - Iniciar sesión
-- `/auth/register` - Registrarse
-
-### Usuarios Autenticados
-- `/dashboard` - Dashboard personal
-- `/cart` - Ver carrito
-- `/cart/checkout` - Proceso de checkout
-- `/orders/my-purchases` - Historial de compras
-- `/auth/logout` - Cerrar sesión
-
-### Solo Vendedores
-- `/products/create` - Publicar producto
-- `/products/<id>/edit` - Editar producto
-- `/products/my-inventory` - Ver inventario
-- `/orders/my-sales` - Historial de ventas
-
-### Solo Administradores
-- `/admin` - Panel de administración
-
-## 🔧 Configuración
-
-### Variables de Entorno (Opcional)
-
-Crea un archivo `.env`:
-
-```env
-SECRET_KEY=tu-clave-secreta-super-segura
-FLASK_ENV=development
-DATABASE_URL=sqlite:///qowlshop.db
-```
-
-### Configuración de Uploads
-
-En `config.py`:
-- `UPLOAD_FOLDER`: Carpeta para imágenes
-- `MAX_CONTENT_LENGTH`: Tamaño máximo (16MB)
-- `ALLOWED_EXTENSIONS`: Formatos permitidos
-
-## 🧪 Probar la Aplicación
-
-### Flujo de prueba completo:
-
-#### 1. Registro de Usuario Vendedor
-1. Ve a `/auth/register`
-2. Completa el formulario
-3. ✅ Marca "Quiero vender productos"
-4. Registra con contraseña segura (ej: `Test123!`)
-
-#### 2. Publicar un Producto
-1. Login con tu usuario vendedor
-2. Ve a `/products/create`
-3. Llena los datos:
-   - Código: `PROD001`
-   - Nombre: `Laptop HP`
-   - Precio: `999.99`
-   - Stock: `10`
-   - Descripción: `Laptop de alta gama`
-4. Sube una imagen (opcional)
-5. Click en "Publicar Producto"
-
-#### 3. Buscar y Comprar
-1. Cierra sesión (o usa modo incógnito)
-2. Registra un nuevo usuario (sin marcar vendedor)
-3. Ve a `/products`
-4. Busca el producto que publicaste
-5. Click en el producto
-6. Click "Agregar al carrito"
-7. Ve a `/cart`
-8. Click "Proceder al checkout"
-9. Confirma la compra
-
-#### 4. Ver Historial
-**Como Comprador:**
-- Ve a `/orders/my-purchases`
-- Verás tu compra reciente
-
-**Como Vendedor:**
-- Login con el usuario vendedor
-- Ve a `/orders/my-sales`
-- Verás la venta realizada
-- Ve a `/products/my-inventory`
-- Verás que el stock se redujo automáticamente
-
-#### 5. Panel Admin
-1. Login como admin (`admin@qowlshop.com`)
-2. Ve a `/admin`
-3. Verás estadísticas generales del sistema
+| Rol                          | Correo Electrónico   | Contraseña  | Permisos                                                     |
+| :--------------------------- | :------------------- | :---------- | :----------------------------------------------------------- |
+| **Administrador / Vendedor** | `admin@qowlshop.com` | `Admin123!` | Acceso completo al sistema, panel admin y venta de productos |
 
 ---
 
-## 🔍 Verificar Instalación
+## 🛣️ Referencia de Rutas y Endpoints
 
-### Comando de verificación rápida:
-```python
-# En terminal Python
-python
+### 🌐 Rutas Públicas
 
->>> from app import create_app, db
->>> from modules.auth.models import User
->>> from modules.products.models import Product, Category
->>> from modules.orders.models import Order, OrderItem
->>> from modules.cart.models import Cart, CartItem
->>> 
->>> app = create_app()
->>> with app.app_context():
-...     print(f"Usuarios: {User.query.count()}")
-...     print(f"Categorías: {Category.query.count()}")
-...     print(f"Admin existe: {User.query.filter_by(role='admin').first() is not None}")
-```
+- `GET /` - Página de inicio con productos destacados y catálogo general.
+- `GET /products/` - Lista de productos con buscador y filtro por categoría/precio.
+- `GET /products/<id>` - Detalle de un producto específico.
+- `GET, POST /auth/login` - Formulario de inicio de sesión.
+- `GET, POST /auth/register` - Registro de nuevos usuarios y selección de rol de vendedor.
 
-Deberías ver:
-```
-Usuarios: 1
-Categorías: 5
-Admin existe: True
-```
+### 👤 Rutas de Usuarios Autenticados
 
----
+- `GET /dashboard` - Dashboard del perfil de usuario.
+- `GET /cart/` - Vista del carrito de compras.
+- `POST /cart/add/<product_id>` - Agregar item al carrito.
+- `POST /cart/update/<item_id>` - Modificar cantidad de un item.
+- `POST /cart/remove/<item_id>` - Eliminar item del carrito.
+- `GET, POST /cart/checkout` - Confirmación y procesamiento de compra.
+- `GET /orders/my-purchases` - Historial de compras realizadas por el usuario.
+- `GET /auth/logout` - Cerrar sesión activa.
 
-## 🐛 Problemas Comunes
+### 🏪 Rutas Exclusivas para Vendedores (`@seller_required`)
 
-### ❌ ModuleNotFoundError
-```
-Solución: pip install -r requirements.txt
-```
+- `GET, POST /products/create` - Publicar un nuevo producto.
+- `GET, POST /products/<id>/edit` - Modificar información y stock de un producto existente.
+- `POST /products/<id>/delete` - Desactivar/eliminar producto.
+- `GET /products/my-inventory` - Panel de gestión de inventario del vendedor.
+- `GET /orders/my-sales` - Registro de ventas realizadas a clientes.
 
-### ❌ No se crea la base de datos
-```bash
-# Verificar que existe instance/
-ls instance/  # o dir instance\ en Windows
+### 🛡️ Rutas de Administración (`@admin_required`)
 
-# Si no existe, ejecutar:
-python
->>> from app import create_app
->>> app = create_app()
->>> with app.app_context():
-...     from extensions import db
-...     db.create_all()
-```
-
-### ❌ Error al subir imágenes
-```bash
-# Verificar permisos de carpeta
-chmod -R 755 static/uploads  # Linux/Mac
-
-# Verificar que la carpeta existe
-ls -la static/uploads/products
-```
-
-### ❌ CSRF Token Missing
-```
-Solución: Asegúrate de que csrf está inicializado
-y que los formularios tienen {{ form.hidden_tag() }}
-```
+- `GET /admin` - Panel general con estadísticas, total de usuarios, ventas globales y productos.
 
 ---
 
-## 📊 Datos de Prueba
+## 🧪 Verificación Rápida de Instalación
 
-Si quieres agregar datos de prueba automáticamente:
+Puedes ejecutar el siguiente script rápido en tu consola interactiva de Python para validar la salud de tu entorno:
 
 ```python
-# create_test_data.py
-from app import create_app, db
+from app import create_app
 from modules.auth.models import User
-from modules.products.models import Product, Category
+from modules.products.models import Product
 
 app = create_app()
-
 with app.app_context():
-    # Crear vendedor de prueba
-    seller = User(
-        username='vendedor1',
-        email='seller@test.com',
-        role='user',
-        is_seller=True
-    )
-    seller.set_password('Test123!')
-    db.session.add(seller)
-    db.session.commit()
-    
-    # Crear productos de prueba
-    products_data = [
-        {'code': 'ELEC001', 'name': 'Laptop Dell', 'price': 1200, 'stock': 5},
-        {'code': 'ELEC002', 'name': 'Mouse Logitech', 'price': 25, 'stock': 50},
-        {'code': 'BOOK001', 'name': 'Python para todos', 'price': 35, 'stock': 20},
-    ]
-    
-    category = Category.query.filter_by(slug='electronica').first()
-    
-    for data in products_data:
-        product = Product(
-            **data,
-            seller_id=seller.id,
-            category_id=category.id if category else None,
-            is_active=True
-        )
-        db.session.add(product)
-    
-    db.session.commit()
-    print("✅ Datos de prueba creados")
+    print(f"✅ Total Usuarios: {User.query.count()}")
+    print(f"✅ Total Productos: {Product.query.count()}")
+    print(f"🛡️ Admin Activo: {User.query.filter_by(role='admin').first().email}")
 ```
-
-Ejecutar: `python create_test_data.py`
 
 ---
 
-## 📊 Historias de Usuario Implementadas
+## 🗺️ Roadmap de Desarrollos Futuros
 
-✅ **Como vendedor/comprador** quiero registrarme con correo y contraseña  
-✅ **Como comprador** necesito buscar/filtrar productos por nombre, código y rango de precio  
-✅ **Como vendedor** necesito consultar el inventario actual y ajustar el stock  
-✅ **Como vendedor** quiero publicar productos con nombre, precio, descripción e imagen  
-✅ **Como comprador** quiero ver los productos que he comprado  
-✅ **Como vendedor** quiero ver los productos que he vendido
+- [ ] 💳 Integración con pasarela de pagos en vivo (**Stripe** / **PayPal**).
+- [ ] 📧 Envío automático de correos de confirmación de compra y facturación.
+- [ ] ⭐ Sistema de reseñas, opiniones y valoraciones con estrellas para productos.
+- [ ] 💖 Lista de deseos (_Wishlist_) personalizable.
+- [ ] 🎟️ Motor de cupones y códigos de descuento.
+- [ ] 📊 Exportación de reportes de ventas a archivos PDF y Excel.
+
+---
 
 ## 🛠️ Tecnologías Utilizadas
 
-- **Flask 3.0**: Framework web
-- **Flask-SQLAlchemy**: ORM
-- **Flask-Login**: Gestión de sesiones
-- **Flask-WTF**: Formularios y CSRF
-- **WTForms**: Validaciones
-- **SQLite**: Base de datos
-- **Bootstrap 5**: Framework CSS
-- **Werkzeug**: Seguridad y uploads
-
-## 💡 Tips
-
-### Acceso rápido al shell de Flask:
-```bash
-flask shell
-# o
-python
->>> from app import create_app, db
->>> app = create_app()
->>> app.app_context().push()
->>> # Ahora puedes usar los modelos directamente
-```
-
-### Ver todas las rutas:
-```bash
-python
->>> from app import create_app
->>> app = create_app()
->>> print(app.url_map)
-```
-
-### Resetear la base de datos:
-```bash
-rm instance/qowlshop.db
-python run.py  # Se creará de nuevo con datos iniciales
-```
-
-## 📚 Cómo Extender la Aplicación
-
-### Agregar un nuevo módulo
-
-1. Crear carpeta en `modules/`
-2. Crear `__init__.py`, `models.py`, `routes.py`, `forms.py`
-3. Importar y registrar blueprint en `app.py`
-
-Ejemplo:
-
-```python
-# En app.py
-from modules.mi_modulo import mi_modulo_bp
-app.register_blueprint(mi_modulo_bp)
-```
-
-### Agregar nuevas relaciones
-
-Edita los modelos correspondientes y agrega las relaciones en ambos lados:
-
-```python
-# En Model A
-items_b = db.relationship('ModelB', back_populates='model_a')
-
-# En Model B
-model_a = db.relationship('ModelA', back_populates='items_b')
-```
-
-## 🔒 Seguridad
-
-- ✅ Contraseñas hasheadas con Werkzeug
-- ✅ Protección CSRF en todos los formularios
-- ✅ Validación de permisos en cada ruta
-- ✅ Sanitización de nombres de archivos
-- ✅ Validación de tipos de archivo
-
-## ✅ Lista de Verificación Final
-
-Antes de considerar el proyecto completo:
-
-- [ ] ✅ Todos los módulos importan correctamente
-- [ ] ✅ La base de datos se crea automáticamente
-- [ ] ✅ El usuario admin existe
-- [ ] ✅ Las categorías se crean
-- [ ] ✅ Puedes registrar usuarios
-- [ ] ✅ Puedes crear productos (como vendedor)
-- [ ] ✅ Puedes buscar y filtrar productos
-- [ ] ✅ Puedes agregar productos al carrito
-- [ ] ✅ Puedes completar una compra
-- [ ] ✅ El historial de compras funciona
-- [ ] ✅ El historial de ventas funciona
-- [ ] ✅ El inventario se actualiza correctamente
+- **Backend:** [Python 3.10+](https://www.python.org/), [Flask 3.0](https://flask.palletsprojects.com/)
+- **ORM & DB:** [Flask-SQLAlchemy](https://flask-sqlalchemy.palletsprojects.com/), [SQLite](https://www.sqlite.org/)
+- **Seguridad & Sesiones:** [Flask-Login](https://flask-login.readthedocs.io/), [Flask-WTF](https://flask-wtf.readthedocs.io/), Werkzeug Security
+- **Frontend:** [Bootstrap 5](https://getbootstrap.com/), Jinja2 Templates, HTML5/CSS3, JavaScript Vanilla
+- **Validación:** WTForms, email-validator
 
 ---
-
-## 🎯 Próximas Funcionalidades Sugeridas
-
-- [ ] Sistema de reviews/calificaciones
-- [ ] Wishlist (lista de deseos)
-- [ ] Pasarela de pagos (Stripe/PayPal)
-- [ ] Notificaciones por email
-- [ ] Sistema de mensajería vendedor-comprador
-- [ ] Estadísticas avanzadas
-- [ ] Export de reportes (PDF/Excel)
-- [ ] Múltiples imágenes por producto
-- [ ] Sistema de cupones/descuentos
-- [ ] Recuperación de contraseña
 
 ## 📄 Licencia
 
-Este proyecto es de código abierto y está disponible para uso educativo y comercial.
+Este proyecto está bajo la Licencia **MIT**. Puedes usarlo libremente con fines educativos o comerciales.
 
----
+<div align="center">
 
-**Desarrollado con ❤️ usando Flask**
+**Desarrollado con ❤️ usando Flask & Python - erickdevlml@gmail.com**
+
+</div>

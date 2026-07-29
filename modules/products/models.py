@@ -17,11 +17,17 @@ class Category(db.Model):
     # Relaciones
     products = db.relationship('Product', back_populates='category', lazy='dynamic')
     
+    def __init__(self, **kwargs):
+        super(Category, self).__init__(**kwargs)
+    
     def __repr__(self):
         return f'<Category {self.name}>'
 
 class Product(db.Model):
     __tablename__ = 'products'
+    
+    def __init__(self, **kwargs):
+        super(Product, self).__init__(**kwargs)
     
     # Campos básicos
     id = db.Column(db.Integer, primary_key=True)

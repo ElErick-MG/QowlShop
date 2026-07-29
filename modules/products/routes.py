@@ -8,7 +8,7 @@ from modules.products.models import Product, Category
 from modules.products.forms import ProductForm, SearchProductForm, UpdateStockForm
 from modules.products.utils import save_product_image, delete_product_image
 from modules.auth.decorators import seller_required
-from sqlalchemy import or_, and_
+from sqlalchemy import or_
 
 products_bp = Blueprint('products', __name__, url_prefix='/products', template_folder='templates')
 

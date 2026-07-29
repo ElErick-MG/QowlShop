@@ -93,7 +93,7 @@ def create_initial_data():
         )
         admin.set_password('Admin123!')
         db.session.add(admin)
-        print("✓ Usuario admin creado: admin@qowlshop.com / Admin123!")
+        print("[OK] Usuario admin creado: admin@qowlshop.com / Admin123!")
     
     # Crear categorías por defecto si no existen
     default_categories = [
@@ -109,7 +109,7 @@ def create_initial_data():
         if not cat:
             cat = Category(**cat_data)
             db.session.add(cat)
-            print(f"✓ Categoría creada: {cat_data['name']}")
+            print(f"[OK] Categoría creada: {cat_data['name']}")
     
     try:
         db.session.commit()

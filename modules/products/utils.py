@@ -2,7 +2,6 @@
 Utilidades para el módulo de productos
 """
 import os
-from werkzeug.utils import secure_filename
 from flask import current_app
 import uuid
 from datetime import datetime
@@ -78,10 +77,6 @@ def delete_product_image(image_url):
     except Exception as e:
         print(f"Error eliminando imagen: {e}")
         return False
-
-def format_price(price):
-    """Formatea el precio para mostrar"""
-    return f"${float(price):,.2f}"
 
 def get_product_image_url(image_url):
     """Retorna la URL completa de la imagen o una imagen por defecto"""

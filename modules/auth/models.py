@@ -9,6 +9,9 @@ from datetime import datetime
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
     
+    def __init__(self, **kwargs):
+        super(User, self).__init__(**kwargs)
+    
     # Campos básicos
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False, index=True)
